@@ -16,8 +16,16 @@ export const GET = authConfig.handleAuth({
     return {
       returnTo: '/',
       authorizationParams: {
-        screen_hint: "signup",
-        login_hint: request.nextUrl.searchParams.get("email")
+        screen_hint: 'signup',
+        login_hint: request.nextUrl.searchParams.get('email')
+      }
+    };
+  }),
+  logout: authConfig.handleLogout((request) => {
+    return {
+      returnTo: '/',
+      logoutParams: {
+        federated: true
       }
     };
   }),
