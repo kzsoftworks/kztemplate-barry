@@ -1,5 +1,5 @@
 // app/api/roles/route.ts
-import { prisma } from 'app/lib/prisma';
+import { prisma } from 'src/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
@@ -9,7 +9,10 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching roles:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch roles', details: error instanceof Error ? error.message : 'Unknown error' },
+      {
+        error: 'Failed to fetch roles',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }

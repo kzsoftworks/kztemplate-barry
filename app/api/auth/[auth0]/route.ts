@@ -1,10 +1,11 @@
 import { redirect } from 'next/navigation';
 import { NextRequest } from 'next/server';
-import { HandlerError } from '@auth0/nextjs-auth0';
-import { authConfig } from 'app/lib/auth0';
+import { HandlerError, Session } from '@auth0/nextjs-auth0';
+import { authConfig } from 'src/lib/auth0';
+import { syncAuth0User } from 'src/lib/prisma';
 
 export const GET = authConfig.handleAuth({
-  login: authConfig.handleLogin((request) => {
+  login: authConfig.handleLogin(() => {
     return {
       returnTo: '/home',
       authorizationParams: {
@@ -21,7 +22,31 @@ export const GET = authConfig.handleAuth({
       }
     };
   }),
-  logout: authConfig.handleLogout((request) => {
+  callback: authConfig.handleCallback({
+    afterCallback: async (request: NextRequest, session: Session) => {
+      if (!session.user) {
+        return session;
+      }
+
+      // Create or update the user in the database
+      const dbUser = await syncAuth0User({
+        sub: session.user.sub,
+        email: session.user.email,
+        name: session.user.name,
+        roles: session.user.roles
+      });
+
+      // Return session with the database user included
+      return {
+        ...session,
+        user: {
+          ...session.user,
+          dbData: dbUser
+        }
+      };
+    }
+  }),
+  logout: authConfig.handleLogout(() => {
     return {
       returnTo: '/',
       logoutParams: {

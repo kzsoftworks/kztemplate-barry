@@ -1,5 +1,4 @@
-import { authConfig } from 'app/lib/auth0';
-import { Label } from 'app/lib/components/ui/label';
+import { authConfig } from 'src/lib/auth0';
 import { User, Mail, BadgeCheck } from 'lucide-react';
 
 export default async function Profile() {

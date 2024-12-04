@@ -1,14 +1,13 @@
-import { authConfig } from './lib/auth0';
-import { buttonVariants } from './lib/components/ui/button';
-import { SubmitButton } from './lib/components/ui/submit-button';
-import { Auth0Logo } from './lib/components/ui/auth0-logo';
-import { WelcomeBackCard } from './lib/components/ui/welcome-back-card';
-import { SignUpForm } from './lib/components/ui/signup-form';
-import { cn } from './lib/utils';
+import { authConfig } from 'src/lib/auth0';
+import { buttonVariants } from 'src/components/ui/button';
+import { SubmitButton } from 'src/components/ui/submit-button';
+import { Auth0Logo } from 'src/components/ui/auth0-logo';
+import { WelcomeBackCard } from 'src/components/ui/welcome-back-card';
+import { SignUpForm } from 'src/components/ui/signup-form';
+import { cn } from 'src/lib/utils';
 
 export default async function Home() {
   const session = await authConfig.getSession();
-
   return (
     <div className="container relative sm:grid h-screen flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-2 lg:px-0">
       {session?.user ? (
@@ -39,14 +38,17 @@ export default async function Home() {
         <div className="relative z-20 m-auto max-w-sm text-center">
           <blockquote className="space-y-2">
             <div className="space-y-12">
-              <p className="text-lg font-medium font-semibold">What is KzBarry?</p>
+              <p className="text-lg font-medium font-semibold">
+                What is KzBarry?
+              </p>
               <p className="text-sm">
-                KzBarry consist on the creation of several templates of a tech stack that can be cloned to start a
-                new project. This will significantly reduce the bootstrap time
-                and enable the development team to focus most of their effort on
-                business logic. It will save considerable time in releasing the
-                initial prototype/MVP and allow Kaizen to decrease estimation
-                time during the discovery phase of new projects, making client
+                KzBarry consist on the creation of several templates of a tech
+                stack that can be cloned to start a new project. This will
+                significantly reduce the bootstrap time and enable the
+                development team to focus most of their effort on business
+                logic. It will save considerable time in releasing the initial
+                prototype/MVP and allow Kaizen to decrease estimation time
+                during the discovery phase of new projects, making client
                 proposals more appealing.
               </p>
             </div>

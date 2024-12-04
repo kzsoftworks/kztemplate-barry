@@ -1,6 +1,6 @@
 // app/api/auth/sync/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from 'app/lib/prisma';
+import { prisma } from 'src/lib/prisma';
 export async function POST(request: NextRequest) {
   try {
     console.log('Sync endpoint called');

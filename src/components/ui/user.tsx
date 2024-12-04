@@ -1,12 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { useUser } from '@auth0/nextjs-auth0/client';
 import { Button } from './button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './dropdown-menu';
+import { useAppUser } from 'src/lib/useAppUser';
 
 export function User() {
-  const { user } = useUser();
+  const { user } = useAppUser();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
