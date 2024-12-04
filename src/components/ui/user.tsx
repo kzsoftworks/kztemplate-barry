@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Button } from './button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './dropdown-menu';
-import { useAppUser } from 'src/lib/useAppUser';
+import { useAppUser } from 'src/hooks/useAppUser';
 
 export function User() {
   const { user } = useAppUser();

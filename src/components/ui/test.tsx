@@ -1,6 +1,6 @@
 'use client';
 
-import { useAppUser } from 'src/lib/useAppUser';
+import { useAppUser } from 'src/hooks/useAppUser';
 
 export default function Test() {
   const { user } = useAppUser();
