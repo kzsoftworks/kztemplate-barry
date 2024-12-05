@@ -1,7 +1,7 @@
-import { ModeToggle } from 'app/lib/components/ui/mode-toggle';
-import { NavItem } from 'app/lib/components/ui/nav-item';
-import { SearchInput } from 'app/lib/components/ui/search';
-import { User } from 'app/lib/components/ui/user';
+import { ModeToggle } from 'src/components/ui/mode-toggle';
+import { NavItem } from 'src/components/ui/nav-item';
+import { SearchInput } from 'src/components/ui/search';
+import { User } from 'src/components/ui/user';
 import { Home, Package } from 'lucide-react';
 
 export default function HomeLayout({

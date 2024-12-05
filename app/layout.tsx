@@ -4,15 +4,15 @@ import { Inter } from 'next/font/google';
 import Script from 'next/script';
 
 import { UserProvider } from '@auth0/nextjs-auth0/client';
-import { ThemeProvider } from './lib/components/ui/theme-provider';
-import { Toaster } from './lib/components/ui/sonner';
+import { ThemeProvider } from 'src/components/ui/theme-provider';
+import { Toaster } from 'src/components/ui/sonner';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'KzBarry Test',
   description: 'This is a webb app template for KzBarry ... ',
-  metadataBase: new URL('https://kzsoftworks.com'),
+  metadataBase: new URL('https://kzsoftworks.com')
 };
 
 export default function RootLayout({

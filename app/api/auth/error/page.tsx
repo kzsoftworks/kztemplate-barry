@@ -9,8 +9,8 @@ import {
   CardFooter,
   CardHeader,
   CardTitle
-} from 'app/lib/components/ui/card';
-import { Button } from 'app/lib/components/ui/button';
+} from 'src/components/ui/card';
+import { Button } from 'src/components/ui/button';
 
 export default function SearchBar() {
   const searchParams = useSearchParams();
