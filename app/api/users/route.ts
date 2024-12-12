@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from 'src/lib/prisma';
+import { withAPIAuth } from 'src/utils/withAPIAuth';
 
-export async function GET() {
+export const GET = withAPIAuth(async () => {
   try {
     const users = await prisma.user.findMany({
       include: { roles: true }
@@ -17,18 +18,19 @@ export async function GET() {
       { status: 500 }
     );
   }
-}
+});
 
-export async function POST(request: NextRequest) {
+export const POST = withAPIAuth(async (request: NextRequest) => {
   try {
     const body = await request.json();
-    const { email, name, roles } = body;
+    const { email, name, roles, picture, auth0Id } = body;
 
     const newUser = await prisma.user.create({
       data: {
         email,
         name,
-        auth0Id: 'manual_' + Date.now(), // Temporary ID for testing purposes
+        picture,
+        auth0Id,
         roles: {
           connectOrCreate: roles.map((roleName: string) => ({
             where: { name: roleName },
@@ -52,4 +54,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
