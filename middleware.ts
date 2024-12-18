@@ -1,5 +1,7 @@
+// middleware.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { getSession } from '@auth0/nextjs-auth0/edge';
 
 const publicRoutes = [
   '/',
@@ -17,28 +19,23 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const authCookie = request.cookies.get('appSession');
-
-  if (!authCookie || authCookie.value === '') {
-    if (pathname.startsWith('/api/')) {
-      return new NextResponse(
-        JSON.stringify({
-          error: 'Unauthorized',
-          message: 'Authentication required'
-        }),
-        {
-          status: 401,
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-    }
-
-    return NextResponse.redirect(new URL('/api/auth/login', request.url));
+  if (pathname.startsWith('/api/')) {
+    return NextResponse.next();
   }
 
-  return NextResponse.next();
+  try {
+    const response = NextResponse.next();
+    const session = await getSession(request, response);
+
+    if (!session?.user) {
+      return NextResponse.redirect(new URL('/api/auth/login', request.url));
+    }
+
+    return response;
+  } catch (error) {
+    console.error('Session verification error:', error);
+    return NextResponse.redirect(new URL('/api/auth/login', request.url));
+  }
 }
 
 export const config = {

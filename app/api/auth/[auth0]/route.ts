@@ -1,4 +1,3 @@
-import { redirect } from 'next/navigation';
 import { NextRequest } from 'next/server';
 import { HandlerError, Session } from '@auth0/nextjs-auth0';
 import { authConfig } from 'src/lib/auth0';
@@ -23,27 +22,32 @@ export const GET = authConfig.handleAuth({
     };
   }),
   callback: authConfig.handleCallback({
-    afterCallback: async (request: NextRequest, session: Session) => {
-      if (!session.user) {
+    async afterCallback(req: NextRequest, session: Session) {
+      try {
+        if (!session?.user) {
+          return session;
+        }
+
+        // Create or update the user in the database
+        const dbUser = await syncAuth0User({
+          sub: session.user.sub,
+          email: session.user.email,
+          name: session.user.name,
+          roles: session.user.roles,
+          picture: session.user.picture
+        });
+
+        return {
+          ...session,
+          user: {
+            ...session.user,
+            dbData: dbUser
+          }
+        };
+      } catch (error) {
+        console.error('Database sync error:', error);
         return session;
       }
-
-      // Create or update the user in the database
-      const dbUser = await syncAuth0User({
-        sub: session.user.sub,
-        email: session.user.email,
-        name: session.user.name,
-        roles: session.user.roles
-      });
-
-      // Return session with the database user included
-      return {
-        ...session,
-        user: {
-          ...session.user,
-          dbData: dbUser
-        }
-      };
     }
   }),
   logout: authConfig.handleLogout(() => {
@@ -54,9 +58,11 @@ export const GET = authConfig.handleAuth({
       }
     };
   }),
-  onError(_req: NextRequest, error: HandlerError) {
-    redirect(
-      `/api/auth/error?error=${error.cause?.message || 'An error occured while authenticating the user.'}`
+  onError(req: NextRequest, error: HandlerError) {
+    console.error('Auth error route:', error);
+    const errorMessage = encodeURIComponent('Authentication error occurred');
+    return Response.redirect(
+      new URL(`/api/auth/error?error=${errorMessage}`, req.url)
     );
   }
 });

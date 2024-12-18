@@ -1,73 +1,203 @@
-
 # Kz Barry Template 
 
 KzBarry is a base template designed to streamline the start of development projects. It reduces initial setup time and is available as a repository on Kaizen for use in production environments.
 
-
-## Index  
+# Index  
 
 - [Installation](#installation)
+- [Vercel](#vercel)
 - [Authentication](#authentication)
-- [How to Create and Connect to a Database](#how-to-create-and-connect-to-a-database)
-- [](#)
-## Installation
+- [Database Setup](#database-setup)
+- [API](#api)
+- [Utilities and Hooks](#utilities-and-hooks)
 
-First we have to clone our template
+# Installation
+
+First, clone our template:
 
 ```bash
-  cd git clone https://github.com/kzsoftworks/kzBarry-nextjs-template.git
-  
-  npm install
-
-  copy `.env.example` and rename it into: `.env` on the root proyect
+git clone https://github.com/kzsoftworks/kzBarry-nextjs-template.git
+npm install
 ```
 
+Copy `.env.example` and rename it to `.env` in the root project directory.
+
+# Vercel
+
+## Why Vercel?
+Vercel provides an all-in-one platform that streamlines our deployment process. It offers:
+
+- Zero-configuration deployments
+- Built-in PostgreSQL database
+- Environment variables management
+- Logs and monitoring
+- Automatic HTTPS and SSL
+- Preview deployments for each PR
+
+This allows us to focus on development while Vercel handles the infrastructure and DevOps tasks out of the box.
+
+## Environment Variables in Vercel
+
+1. Open Vercel Dashboard
+2. Select your project
+3. Go to Settings > Environment Variables
+4. Add each variable with its value
+
+# Authentication
+
+Currently, we only support Auth0 authentication.
+
+## Environment Variables (Auth0)
+
+Required environment variables for your `.env` file:
+
+```plaintext
+AUTH0_BASE_URL
+AUTH0_CLIENT_ID
+AUTH0_CLIENT_SECRET
+AUTH0_SECRET
+AUTH0_AUDIENCE
+AUTH0_DOMAIN
+AUTH0_ISSUER_BASE_URL
+```
+
+## Auth0 Setup
+
+1. Log in to your Auth0 account
+
+2. Create a new application:
+   - Go to Applications in the left panel
+   - Click Create Application
+   - Select Regular Web Applications
+   - Choose Next.js
+
+3. Configure settings:
+   - Go to Settings tab
+   - Copy required credentials to your .env:
+     ```plaintext
+     AUTH0_BASE_URL=http://localhost:3000
+     AUTH0_DOMAIN=[Your Domain]
+     AUTH0_CLIENT_ID=[Your Client ID]
+     AUTH0_CLIENT_SECRET=[Your Client Secret]
+     AUTH0_ISSUER_BASE_URL=https://[Your Domain]
+     ```
+
+4. Set up Application URIs:
+   - Allowed Callback URLs: `http://localhost:3000/api/auth/callback`
+   - Allowed Logout URLs: `http://localhost:3000`
+   - Allowed Web Origins: `http://localhost:3000`
+
+5. Enable at least one authentication method in Connections tab
+
+# Database Setup
+
+You can choose between Vercel's PostgreSQL or a local database.
+
+## Vercel Database
+
+1. Go to Vercel Dashboard
+2. Navigate to Storage
+3. Click Create Database
+4. Copy the connection string to `DATABASE_URL` in your .env
+
+## Local Database
+
+### Windows Setup
+
+1. Download PostgreSQL from official website
+2. Run installer and follow setup wizard
+3. Create database using pgAdmin 4
+
+### macOS Setup
+
+Using Homebrew:
+```bash
+brew install postgresql@15
+brew services start postgresql@15
+```
+
+Create database:
+```bash
+psql postgres
+CREATE DATABASE your_database_name;
+```
+
+# API
+
+Our API supports both protected and public endpoints.
+
 ## Authentication
+Endpoints can be protected using the `withAPIAuth` wrapper or left public. Protected endpoints validate Auth0 session automatically.
 
-At the moment, we only have Auth0 authentication. 
+## User Synchronization
+User data automatically syncs between Auth0 and our database during login and signup.
 
-### Environment Variables (Auth0)
+## Endpoints
 
-To run this project, you will need to add the following environment variables to your .env file
+### Users
 
-`AUTH0_CLIENT_ID`
+```http
+GET /api/users      # Protected - Get all users
+POST /api/users     # Protected - Create user
+POST /api/auth/sync # Public - Auth0 sync
+```
 
-`AUTH0_CLIENT_SECRET`
+## Making API Calls
 
-`AUTH0_SECRET`
-
-`AUTH0_DOMAIN`
-
-## How to Create and Connect the Project with Auth0
-
-This guide will walk you through creating a project and connecting it with Auth0 for authentication.
-
-First, we have to be logged in to an Auth0 account
+Example of authenticated request:
+```typescript
+const fetchUsers = async () => {
+  try {
+    const response = await fetch('/api/users', {
+      credentials: 'include' // Required for Auth0 session
+    });
     
-Now we have to go to Application (on the left pannel, Create Application, select `Regular Web Applications` and finally `Next.js`)
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message);
+    }
     
-Go the `Settings` panel.
-    
-    Now we have to copy the following properties into our .env
-        Domain -> AUTH0_DOMAIN
-        ClientID -> AUTH0_CLIENT_ID
-        Client Secret -> AUTH0_CLIENT_SECRET
-        APP_BASE_URL -> local URL. For example: http://localhost:3000
-        Credentials > Client Secret -> AUTH0_SECRET
-        
-And on the same tab `Settings` we go down into `Application URIs`.
-We set Allowed Callback URLs with: Our_local_base_url/api/auth/callback. 
-For example: `http://localhost:3001/api/auth/callback`
-    
-And on `Allowed Logout URLs and Allowed Web Origins`: Our local base url For example: `http://localhost:3001`
+    return await response.json();
+  } catch (error) {
+    console.error('Failed to fetch users:', error);
+    throw error;
+  }
+};
+```
 
-And finally we have to enable at least one Authentication method on tab `Connections`
+# Utilities and Hooks
 
+## Authentication Utilities
 
+### withAPIAuth
+Protects API endpoints with Auth0 authentication:
 
+```typescript
+import { withAPIAuth } from '@/utils/withAPIAuth';
 
-# How to Create and Connect to a Database
+export const GET = withAPIAuth(async () => {
+  // Protected endpoint logic
+});
+```
 
-This guide will help you understand the steps needed to create a database and establish a connection to it with Vercel (postgres database)
+## Custom Hooks
 
-We need to go to Vercel, then navigate to Storage and click the Create Database button. After that, we enter the database and copy the `psql` code into our .env file under the `DATABASE_URL` variable.
+### useAppUser
+Enhanced version of Auth0's useUser hook with database data:
+
+```typescript
+import { useAppUser } from '@/hooks/useAppUser';
+
+function Profile() {
+  const { user, isLoading } = useAppUser();
+  
+  if (isLoading) return <div>Loading...</div>;
+  
+  return (
+    <div>
+      <h1>{user?.name}</h1>
+      <p>{user?.dbData?.email}</p>
+    </div>
+  );
+}
+```
