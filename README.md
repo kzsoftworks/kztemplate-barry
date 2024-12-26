@@ -4,9 +4,6 @@
 KzBarry is a base template designed to streamline the start of development projects. It reduces initial setup time and is available as a repository on Kaizen for use in production environments.
 
 
-
-
-
 # Index  
 
 - [Installation](#installation)
@@ -27,6 +24,10 @@ First we have to clone our template
   npm install
 ```
   copy `.env.example` and rename it into: `.env` on the root proyect
+
+  Finally, we run `npm run dev`.
+
+  Disclaimer: For this version, we need to have Auth0 working in order to make the application function properly.
 # Vercel
 
 #### Why Vercel?
@@ -81,7 +82,7 @@ This guide will walk you through creating a project and connecting it with Auth0
 
 First, we have to be logged in to an Auth0 account
     
-Now we have to go to Application (on the left pannel, Create Application, select `Regular Web Applications` and finally `Next.js`
+Now we have to go to Application (on the left pannel, Create Application), select `Regular Web Applications` and finally `Next.js`
     
 Go the `Settings` tab.
     
@@ -90,7 +91,7 @@ Go the `Settings` tab.
         Domain -> AUTH0_DOMAIN
         ClientID -> AUTH0_CLIENT_ID
         Client Secret -> AUTH0_CLIENT_SECRET
-        Credentials -> Client Secret -> AUTH0_SECRET
+        Credentials Tab -> Client Secret -> AUTH0_SECRET
         AUTH0_ISSUER_BASE_URL -> https:// + Auth0 domain 
         
         
@@ -163,14 +164,57 @@ For local development:
 - Port: 5432 (default)
 - Database: Your database name
 
-### Setting Up Environment Variables
+So in the ENV variable `DATABASE_URL` should be like this:
+DATABASE_URL="postgres://postgres:yourpassword@localhost:5432/your_database_name"
 
 
-#### Common Issues on Windows
+## Database Migrations
+
+### Prerequisites
+- PostgreSQL database already set up
+- Valid `DATABASE_URL` in your `.env` file
+
+### Running Migrations
+
+1. Push the database schema to your database:
+```bash
+npx prisma db push
+```
+
+2. (Optional) View your database structure using Prisma Studio:
+```bash
+npx prisma studio
+```
+
+### Troubleshooting
+
+If you encounter any issues:
+
+1. Reset the database (⚠️ This will delete all data):
+```bash
+npx prisma db reset
+```
+
+2. Check migration status:
+```bash
+npx prisma migrate status
+```
+
+### Database Schema Overview
+
+The migrations will create the following tables:
+
+- `users`: Stores user information including Auth0 authentication details, email, and profile data
+- `roles`: Manages user roles with a many-to-many relationship to users
+
+The schema includes automatic timestamps and unique identifiers for all records.
+
+
+### Common Issues on Windows
 - If pgAdmin doesn't open, try running it as administrator
 - If the service doesn't start, check Windows Services (services.msc) and ensure "postgresql-x64-15" is running
 
-#### Common Issues on macOS
+### Common Issues on macOS
 
 - If brew services start postgresql fails, try:
 
