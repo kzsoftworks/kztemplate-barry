@@ -4,6 +4,9 @@
 KzBarry is a base template designed to streamline the start of development projects. It reduces initial setup time and is available as a repository on Kaizen for use in production environments.
 
 
+
+
+
 # Index  
 
 - [Installation](#installation)
@@ -82,7 +85,7 @@ This guide will walk you through creating a project and connecting it with Auth0
 
 First, we have to be logged in to an Auth0 account
     
-Now we have to go to Application (on the left pannel, Create Application), select `Regular Web Applications` and finally `Next.js`
+Now we have to go to Application (on the left pannel), Create Application, select `Regular Web Applications` and finally `Next.js`
     
 Go the `Settings` tab.
     
@@ -324,8 +327,7 @@ function Profile() {
 }
 ```
 
-These utilities help maintain consistent authentication and user management across your application while reducing boilerplate code.
-# Sentry
+These utilities help maintain consistent authentication and user management across your application while reducing boilerplate code.# Sentry
 
 We use Sentry for error tracking and performance monitoring.
 
@@ -345,17 +347,15 @@ We use Sentry for error tracking and performance monitoring.
    - Navigate to SDK Setup
    - Find and copy the DSN under "Client Keys (DSN)"
 
-The DSN (Data Source Name) is required for Sentry to identify which project should receive the events.
-
-
-
 ## Environment Variables
+
+### Local Development
 
 Create `.env.sentry-build-plugin` file:
 ```plaintext
 # DO NOT commit this file to your repository!
 # The SENTRY_AUTH_TOKEN variable is picked up by the Sentry Build Plugin.
-# It's used for authentication when uploading source maps.
+# Used for uploading source maps during build time to get readable stack traces in production.
 SENTRY_AUTH_TOKEN=[your-auth-token]
 ```
 
@@ -363,6 +363,13 @@ Add to your `.env`:
 ```plaintext
 NEXT_PUBLIC_SENTRY_DSN=[your-dsn]
 ```
+
+### Production Setup
+For production deployments (e.g., Vercel), you can either:
+
+1. Add `SENTRY_AUTH_TOKEN` directly in your deployment platform's environment variables:
+
+2. Or add it to your existing `.env` file (ensure it's included in your deployment)
 
 ## Configuration
 
