@@ -1,13 +1,13 @@
-import { authConfig } from 'src/lib/auth0';
-import { buttonVariants } from 'src/components/ui/button';
-import { SubmitButton } from 'src/components/ui/submit-button';
-import { Auth0Logo } from 'src/components/ui/auth0-logo';
-import { WelcomeBackCard } from 'src/components/ui/welcome-back-card';
-import { SignUpForm } from 'src/components/ui/signup-form';
-import { cn } from 'src/lib/utils';
+import { buttonVariants } from '@/components/ui/button';
+import { SubmitButton } from '@/components/ui/submit-button';
+import { Auth0Logo } from '@/components/ui/auth0-logo';
+import { WelcomeBackCard } from '@/components/ui/welcome-back-card';
+import { SignUpForm } from '@/components/ui/signup-form';
+import { cn } from '@/lib/utils';
+import { getServerAppUser } from '@/utils/getServerAppUser';
 
 export default async function Home() {
-  const session = await authConfig.getSession();
+  const session = await getServerAppUser();
   return (
     <div className="container relative sm:grid h-screen flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-2 lg:px-0">
       {session?.user ? (

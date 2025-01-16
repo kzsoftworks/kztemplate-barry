@@ -1,8 +1,8 @@
-import { ModeToggle } from 'src/components/ui/mode-toggle';
-import { NavItem } from 'src/components/ui/nav-item';
-import { SearchInput } from 'src/components/ui/search';
-import { User } from 'src/components/ui/user';
-import { Home, Package } from 'lucide-react';
+import { ModeToggle } from '@/components/ui/mode-toggle';
+import { NavItem } from '@/components/ui/nav-item';
+import { SearchInput } from '@/components/ui/search';
+import { User } from '@/components/ui/user';
+import { Home, ShieldCheck } from 'lucide-react';
 
 export default function HomeLayout({
   children
@@ -34,8 +34,8 @@ function DesktopNav() {
           <Home className="h-5 w-5" />
         </NavItem>
 
-        <NavItem href="/home/" label="Home">
-          <Package className="h-5 w-5" />
+        <NavItem href="/admin/" label="Admin">
+          <ShieldCheck className="h-5 w-5" />
         </NavItem>
       </nav>
       <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5"></nav>

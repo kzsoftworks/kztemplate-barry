@@ -1,5 +1,5 @@
 // app/api/roles/route.ts
-import { prisma } from 'src/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {

@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { HandlerError, Session } from '@auth0/nextjs-auth0';
-import { authConfig } from 'src/lib/auth0';
-import { syncAuth0User } from 'src/lib/prisma';
+import { authConfig } from '@/lib/auth0';
+import { syncAuth0User } from '@/lib/prisma';
 
 export const GET = authConfig.handleAuth({
   login: authConfig.handleLogin(() => {

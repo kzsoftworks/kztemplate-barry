@@ -1,24 +1,26 @@
 'use client';
-import { useUser } from '@auth0/nextjs-auth0/client';
 import { User } from '@prisma/client';
 import { useEffect, useState } from 'react';
+import { useAppUser } from '@/hooks/useAppUser';
 
 export default function UsersComponent() {
-  const { user, isLoading, error } = useUser();
+  const { user } = useAppUser();
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
     if (user) {
       fetchUsers();
     }
-  }, [user]);
+  }, [user?.sub]);
 
   const fetchUsers = async () => {
     try {
-      console.log('Fetching users...');
-      const response = await fetch('http://localhost:3001/api/users', {
-        credentials: 'include'
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/users`,
+        {
+          credentials: 'include'
+        }
+      );
 
       if (!response.ok) {
         const error = await response.json();
@@ -32,15 +34,11 @@ export default function UsersComponent() {
     }
   };
 
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error.message}</div>;
-  if (!user) return <div>Please log in</div>;
-
   return (
     <div className="p-6 max-w-7xl mx-auto min-h-screen">
       <div className="mb-8 text-center">
         <h1 className="text-4xl font-bold text-gray-800 dark:text-gray-100 mb-2">
-          Welcome, {user.name}!
+          Welcome, {user?.name}!
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
           Here's an overview of all registered users

@@ -4,13 +4,8 @@ import Link from 'next/link';
 import { ArrowRightIcon } from '@radix-ui/react-icons';
 
 import { useSearchParams } from 'next/navigation';
-import {
-  Card,
-  CardFooter,
-  CardHeader,
-  CardTitle
-} from 'src/components/ui/card';
-import { Button } from 'src/components/ui/button';
+import { Card, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 export default function SearchBar() {
   const searchParams = useSearchParams();

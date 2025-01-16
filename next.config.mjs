@@ -1,4 +1,5 @@
 import { withSentryConfig } from '@sentry/nextjs';
+
 export default withSentryConfig(
   {
     images: {
@@ -12,12 +13,22 @@ export default withSentryConfig(
           hostname: '*.public.blob.vercel-storage.com'
         }
       ]
+    },
+    webpack: (config) => {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        '@': '.',
+        '@/hooks': './src/hooks',
+        '@/utils': './src/utils',
+        '@/components': './src/components',
+        '@/lib': './src/lib'
+      };
+      return config;
     }
   },
   {
     // For all available options, see:
     // https://github.com/getsentry/sentry-webpack-plugin#options
-
     org: 'kzbarry',
     project: 'template-kzbarry',
 
@@ -44,13 +55,13 @@ export default withSentryConfig(
     // Hides source maps from generated client bundles
     hideSourceMaps: true,
 
-    // Automatically tree-shake Sentry logger statements to reduce bundle size
-    disableLogger: true,
-
     // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
     // See the following for more information:
     // https://docs.sentry.io/product/crons/
     // https://vercel.com/docs/cron-jobs
-    automaticVercelMonitors: true
+    automaticVercelMonitors: true,
+    experimental: {
+      serverActions: true
+    }
   }
 );
