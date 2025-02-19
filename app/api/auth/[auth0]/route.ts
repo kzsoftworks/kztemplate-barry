@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { HandlerError, Session } from '@auth0/nextjs-auth0';
 import { authConfig } from '@/lib/auth0';
-import { syncAuth0User } from '@/lib/prisma';
+import { prisma, syncAuth0User } from '@/lib/prisma';
 
 export const GET = authConfig.handleAuth({
   login: authConfig.handleLogin(() => {
@@ -28,14 +28,27 @@ export const GET = authConfig.handleAuth({
           return session;
         }
 
-        // Create or update the user in the database
-        const dbUser = await syncAuth0User({
-          sub: session.user.sub,
-          email: session.user.email,
-          name: session.user.name,
-          roles: session.user.roles,
-          picture: session.user.picture
+        // Check if user exists in our database
+        let dbUser = await prisma.user.findUnique({
+          where: { email: session.user.email }
         });
+
+        // If user doesn't exist, this is their first login (signup)
+        if (!dbUser) {
+          // Create new user in database
+          dbUser = await syncAuth0User({
+            sub: session.user.sub,
+            email: session.user.email,
+            name: session.user.name,
+            roles: session.user.roles,
+            picture: session.user.picture
+          });
+        }
+
+        if (!dbUser) {
+          console.error('User not found in database');
+          return session;
+        }
 
         return {
           ...session,

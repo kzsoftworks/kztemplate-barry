@@ -1,3 +1,4 @@
+import UserDataDisplay from '@/src/components/UserDataDisplay';
 import { getServerAppUser } from '@/src/utils/getServerAppUser';
 import Link from 'next/link';
 
@@ -26,13 +27,12 @@ export default async function Profile() {
         </ul>
       </nav>
 
+      <UserDataDisplay />
+
       <main className="container">
         <article>
           <header>
-            <h2>Your Profile</h2>
-            <p>
-              Welcome back, <strong>{user!.name || user!.email}</strong>!
-            </p>
+            <h2>From Server User Data</h2>
           </header>
 
           <section>
@@ -52,10 +52,10 @@ export default async function Profile() {
             <dl>
               <dt>Email</dt>
               <dd>{user!.email}</dd>
-              {user!.name && (
+              {user!.dbData?.name && (
                 <>
                   <dt>Name</dt>
-                  <dd>{user!.name}</dd>
+                  <dd>{user!.dbData?.name}</dd>
                 </>
               )}
               {user!.dbData?.createdAt && (
