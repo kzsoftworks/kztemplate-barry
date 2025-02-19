@@ -65,9 +65,9 @@ export const GET = authConfig.handleAuth({
   }),
   logout: authConfig.handleLogout(() => {
     return {
-      returnTo: 'http://localhost:3000',
+      returnTo: process.env.AUTH0_BASE_URL || 'http://localhost:3000',
       logoutParams: {
-        returnTo: 'http://localhost:3000'
+        returnTo: process.env.AUTH0_BASE_URL || 'http://localhost:3000'
       }
     };
   }),
