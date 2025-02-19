@@ -13,8 +13,14 @@ const config: Config = {
   // Add more setup options before each test is run
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   moduleNameMapper: {
-    // Handle module aliases (if you're using them in your project)
-    '^@/(.*)$': '<rootDir>/src/$1',
+    // Handle module aliases
+    '^@/(.*)$': '<rootDir>/$1',
+    // Handle CSS imports (with CSS modules)
+    '^.+\\.module\\.(css|sass|scss)$': 'identity-obj-proxy',
+    // Handle CSS imports (without CSS modules)
+    '^.+\\.(css|sass|scss)$': '<rootDir>/__mocks__/styleMock.js',
+    // Handle image imports
+    '^.+\\.(jpg|jpeg|png|gif|webp|avif|svg)$': '<rootDir>/__mocks__/fileMock.js'
   },
   testMatch: ['**/__tests__/**/*.[jt]s?(x)', '**/?(*.)+(spec|test).[jt]s?(x)'],
 }
