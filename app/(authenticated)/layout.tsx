@@ -1,15 +1,16 @@
-export default function Layout({ children }: { children: React.ReactNode }) {
-  return (
-    <html>
-      <head></head>
-      <body>
-        <div>
-          <div>
-            <h1>Layout Page</h1>
-          </div>
-          <div>{children}</div>
-        </div>
-      </body>
-    </html>
-  );
+import { getServerAppUser } from '@/src/utils/getServerAppUser';
+import { redirect } from 'next/navigation';
+
+export default async function AuthenticatedLayout({
+  children
+}: {
+  children: React.ReactNode;
+}) {
+  const session = await getServerAppUser();
+
+  if (!session?.user) {
+    redirect('/');
+  }
+
+  return <>{children}</>;
 }

@@ -6,7 +6,7 @@ import { syncAuth0User } from '@/lib/prisma';
 export const GET = authConfig.handleAuth({
   login: authConfig.handleLogin(() => {
     return {
-      returnTo: '/home',
+      returnTo: '/',
       authorizationParams: {
         screen_hint: 'login'
       }
@@ -52,9 +52,9 @@ export const GET = authConfig.handleAuth({
   }),
   logout: authConfig.handleLogout(() => {
     return {
-      returnTo: '/',
+      returnTo: 'http://localhost:3000',
       logoutParams: {
-        federated: true
+        returnTo: 'http://localhost:3000'
       }
     };
   }),
