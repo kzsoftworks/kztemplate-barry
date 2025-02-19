@@ -1,31 +1,14 @@
-import { buttonVariants } from '@/components/ui/button';
-import { SubmitButton } from '@/components/ui/submit-button';
-import { Auth0Logo } from '@/components/ui/auth0-logo';
-import { WelcomeBackCard } from '@/components/ui/welcome-back-card';
-import { SignUpForm } from '@/components/ui/signup-form';
-import { cn } from '@/lib/utils';
-import { getServerAppUser } from '@/utils/getServerAppUser';
-
 export default async function Home() {
   const session = await getServerAppUser();
+
   return (
     <div className="container relative sm:grid h-screen flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-2 lg:px-0">
       {session?.user ? (
-        <a
-          href="/api/auth/logout"
-          className={cn(
-            buttonVariants({ variant: 'ghost' }),
-            'absolute right-4 top-4 md:right-8 md:top-8'
-          )}
-        >
-          <SubmitButton>Logout</SubmitButton>
-        </a>
+        <a href="/api/auth/logout">Logout</a>
       ) : (
-        <div className="absolute right-4 top-4 md:right-8 md:top-8">
-          <span className="text-sm pr-3">Already joined? </span>{' '}
-          <a className="text-sm underline" href="/api/auth/login">
-            <SubmitButton> Log in</SubmitButton>
-          </a>
+        <div>
+          <span>Already joined? </span>
+          <a href="/api/auth/login">Log in</a>
         </div>
       )}
 

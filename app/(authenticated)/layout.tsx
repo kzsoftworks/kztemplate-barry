@@ -4,41 +4,47 @@ import { SearchInput } from '@/components/ui/search';
 import { User } from '@/components/ui/user';
 import { Home, ShieldCheck } from 'lucide-react';
 
-export default function HomeLayout({
-  children
-}: {
-  children: React.ReactNode;
-}) {
+export default function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <main className="flex min-h-screen w-full flex-col bg-muted/40">
-      <DesktopNav />
-      <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-14">
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
-          <SearchInput />
-          <User />
-          <ModeToggle />
-        </header>
-        <main className="grid flex-1 items-start gap-2 p-4 sm:px-6 sm:py-0 md:gap-4 bg-muted/40">
-          {children}
-        </main>
-      </div>
-    </main>
-  );
-}
-
-function DesktopNav() {
-  return (
-    <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex">
-      <nav className="flex flex-col items-center gap-4 px-2 sm:py-5">
-        <NavItem href="/home/" label="Home">
-          <Home className="h-5 w-5" />
-        </NavItem>
-
-        <NavItem href="/admin/" label="Admin">
-          <ShieldCheck className="h-5 w-5" />
-        </NavItem>
-      </nav>
-      <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5"></nav>
-    </aside>
+    <html>
+      <head>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+          }
+          .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+          }
+          .header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px;
+            text-align: center;
+          }
+          .content {
+            margin: 20px 0;
+            padding: 20px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+          }
+        </style>
+      </head>
+      <body>
+        <div className="container">
+          <div className="header">
+            <h1>Layout Page</h1>
+          </div>
+          <div className="content">
+            {children}
+          </div>
+        </div>
+      </body>
+    </html>
   );
 }
