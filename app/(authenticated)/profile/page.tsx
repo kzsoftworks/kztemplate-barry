@@ -1,45 +1,75 @@
-import { authConfig } from 'src/lib/auth0';
-import { User, Mail, BadgeCheck } from 'lucide-react';
+import UserDataDisplay from '@/src/components/UserDataDisplay';
+import { getServerAppUser } from '@/src/utils/getServerAppUser';
+import Link from 'next/link';
 
 export default async function Profile() {
-  const session = await authConfig.getSession();
+  const { user } = await getServerAppUser();
+
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="w-full max-w-md p-6 bg-white dark:bg-gray-900 rounded-lg shadow-lg">
-        <div className="flex flex-col items-center">
-          <img
-            src={session?.user?.picture || '/default-avatar.png'}
-            alt="Profile Picture"
-            className="w-24 h-24 rounded-full border-2 border-blue-500 dark:border-blue-300"
-          />
-          <h1 className="mt-4 text-xl font-semibold text-gray-800 dark:text-gray-200">
-            {session?.user?.name || 'Unknown User'}
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400">
-            {session?.user?.email}
-          </p>
-        </div>
-        <div className="mt-6 space-y-4">
-          <div className="flex items-center space-x-3">
-            <Mail className="w-5 h-5 text-blue-500 dark:text-blue-300" />
-            <p className="text-gray-700 dark:text-gray-300">
-              {session?.user?.email || 'No Email'}
-            </p>
-          </div>
-          <div className="flex items-center space-x-3">
-            <User className="w-5 h-5 text-green-500 dark:text-green-300" />
-            <p className="text-gray-700 dark:text-gray-300">
-              {session?.user?.name || 'No Name'}
-            </p>
-          </div>
-          <div className="flex items-center space-x-3">
-            <BadgeCheck className="w-5 h-5 text-purple-500 dark:text-purple-300" />
-            <p className="text-gray-700 dark:text-gray-300">
-              {session?.user?.sub || 'No ID'}
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
+    <>
+      <nav>
+        <ul>
+          <li>
+            <strong>KzBarry</strong>
+          </li>
+        </ul>
+        <ul>
+          <li>
+            <Link href="/" role="button">
+              Home
+            </Link>
+          </li>
+          <li>
+            <a href="/api/auth/logout" role="button">
+              Logout
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <UserDataDisplay />
+
+      <main className="container">
+        <article>
+          <header>
+            <h2>From Server User Data</h2>
+          </header>
+
+          <section>
+            <h3>Profile Information</h3>
+            {user!.picture && (
+              <img
+                src={user!.picture}
+                alt="Profile"
+                style={{
+                  width: '100px',
+                  height: '100px',
+                  borderRadius: '50%',
+                  marginBottom: '1rem'
+                }}
+              />
+            )}
+            <dl>
+              <dt>Email</dt>
+              <dd>{user!.email}</dd>
+              {user!.dbData?.name && (
+                <>
+                  <dt>Name</dt>
+                  <dd>{user!.dbData?.name}</dd>
+                </>
+              )}
+              {user!.dbData?.createdAt && (
+                <>
+                  <dt>Created at:</dt>
+                  <dd>
+                    {new Date(user!.dbData.createdAt).toLocaleDateString()}
+                  </dd>
+                </>
+              )}
+            </dl>
+          </section>
+        </article>
+      </main>
+    </>
   );
 }

@@ -73,8 +73,6 @@ To run this project, you will need to add the following environment variables to
 
 `AUTH0_SECRET`
 
-`AUTH0_AUDIENCE`
-
 `AUTH0_DOMAIN`
 
 `AUTH0_ISSUER_BASE_URL`
@@ -117,7 +115,25 @@ We have two choices, we can do it with Vercel as it provides an easy headless po
 
 ### Vercel
 
-We need to go to Vercel, then navigate to Storage and click the Create Database button. After that, we enter the database and copy the `psql` code into our .env file under the `DATABASE_URL` variable.
+1. Go to your Vercel project dashboard
+2. Navigate to the "Storage" tab
+3. Click "Create Database"
+4. Choose "Postgres" as your database type
+5. Select your preferred region
+6. Click "Create"
+
+After creation:
+
+1. Go to the database settings
+2. Copy the `POSTGRES_PRISMA_URL` value
+3. Paste it in your `.env` file as `DATABASE_URL`
+
+Your connection string will look like this:
+```
+DATABASE_URL="postgres://[user]:[password]@[endpoint]/[database]?sslmode=require"
+```
+
+This will create a Neon-powered PostgreSQL database that's automatically configured and optimized for your Vercel deployment.
 
 
 
@@ -236,11 +252,17 @@ For additional help, consult the [PostgreSQL documentation](https://www.postgres
 Endpoints can be protected or public. Protected endpoints use `withAPIAuth` wrapper which validates Auth0 session, while public endpoints can be accessed without authentication.
 
 #### User Synchronization
-When users interact with Auth0 (login, signup), their information is automatically synchronized with our database to maintain consistency between Auth0 and our system.
+When users interact with Auth0 (login, signup), their Information is automatically synchronized with our database to maintain consistency between Auth0 and our system.
 
 ### Endpoints
 
 ## Users
+
+
+Retrieve the logged user. Protected endpoint.
+```http
+GET /api/users/me
+```
 
 Retrieve all registered users. Protected endpoint.
 ```http
@@ -292,18 +314,6 @@ The template includes several utilities and hooks to streamline common tasks in 
 
 ### Authentication Utilities
 
-#### withAPIAuth
-A Higher-Order Function to protect API endpoints with Auth0 authentication.
-
-```typescript
-// Example usage
-import { withAPIAuth } from '@/utils/withAPIAuth';
-
-export const GET = withAPIAuth(async () => {
-  // Your protected endpoint logic
-});
-```
-
 ### Custom Hooks
 
 #### useAppUser
@@ -327,7 +337,27 @@ function Profile() {
 }
 ```
 
-These utilities help maintain consistent authentication and user management across your application while reducing boilerplate code.# Sentry
+#### getServerAppUser 
+Server Side version of the hook useAppUser
+
+```typescript
+// Example usage
+import { getServerAppUser } from '@/utils/getServerAppUser';
+
+function Profile() {
+  const user = await getServerAppUser();
+    
+  return (
+    <div>
+      <h1>{user?.email}</h1>
+      <p>{user?.dbData?.name}</p>
+    </div>
+  );
+}
+```
+
+These utilities help maintain consistent authentication and user management across your application while reducing boilerplate code.
+# Sentry
 
 We use Sentry for error tracking and performance monitoring.
 
