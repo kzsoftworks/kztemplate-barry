@@ -1,13 +1,13 @@
-import { Suspense } from "react"
+import { Suspense } from 'react';
 
 export default async function ErrorLayout({
-  children,
+  children
 }: Readonly<{
-  children: React.ReactNode
+  children: React.ReactNode;
 }>) {
   return (
     <Suspense>
-      <main className="flex min-h-screen items-center">{children}</main>
+      <main>{children}</main>
     </Suspense>
-  )
+  );
 }

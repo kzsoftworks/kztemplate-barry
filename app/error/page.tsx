@@ -1,31 +1,27 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRightIcon } from '@radix-ui/react-icons';
-
 import { useSearchParams } from 'next/navigation';
-import { Card, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 
-export default function SearchBar() {
-  const searchParams = useSearchParams();
-  const error = searchParams.get('error');
 
+export default function Error() {
   return (
-    <div className="mx-auto max-w-sm">
-      <Card className="w-[450px]">
-        <CardHeader>
-          <CardTitle>Unauthorized</CardTitle>
-          {/* <CardDescription>{error}</CardDescription> */}
-        </CardHeader>
-        <CardFooter>
-          <Link href="/" className="w-full">
-            <Button className="w-full">
-              Go to Homepage <ArrowRightIcon className="ml-2 size-4" />
-            </Button>
+    <div>
+      <div>
+        <div>
+          <h2>Something went wrong!</h2>
+          <p>
+            Please try again later or contact support if the problem persists.
+          </p>
+        </div>
+        <div>
+          <Link href="/">
+            <button>
+              Go to Homepage →
+            </button>
           </Link>
-        </CardFooter>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

@@ -5,10 +5,6 @@ import { useAppUser } from '@/hooks/useAppUser';
 import { updateUserProfile, fetchUserStats, ActionResponse } from './actions';
 import { useFormState } from 'react-dom';
 import { toast } from 'sonner';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 
 const initialState: ActionResponse = {
   success: false,
@@ -42,87 +38,66 @@ export default function HomePage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <Card className="w-full max-w-2xl mx-auto">
-        <CardHeader>
-          <CardTitle>User Profile</CardTitle>
-        </CardHeader>
+    <>
+      <div>
+        <h1>User Profile</h1>
+        <form action={formAction}>
+          <div>
+            <label htmlFor="email">Email</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              defaultValue={user?.email || ''}
+              readOnly
+            />
+          </div>
+          <div>
+            <label htmlFor="name">Name</label>
+            <input
+              id="name"
+              name="name"
+              placeholder="Name"
+              defaultValue={user?.dbData?.name || ''}
+            />
+          </div>
 
-        <CardContent>
-          <form action={formAction} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                defaultValue={user?.email || ''}
-                readOnly
-                className="bg-muted"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                name="name"
-                placeholder="Name"
-                defaultValue={user?.dbData?.name || ''}
-              />
-            </div>
+          <div>
+            <label htmlFor="picture">Profile Image URL</label>
+            <input
+              id="picture"
+              name="picture"
+              type="url"
+              placeholder="https://example.com/profile.jpg"
+              defaultValue={user?.picture || ''}
+            />
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="picture">Profile Image URL</Label>
-              <Input
-                id="picture"
-                name="picture"
-                type="url"
-                placeholder="https://example.com/profile.jpg"
-                defaultValue={user?.picture || ''}
-              />
-            </div>
+          <div>
+            <button type="submit">Upload Profile</button>
+          </div>
+        </form>
+      </div>
 
-            <div className="flex justify-end space-x-4">
-              <Button type="submit" className="w-full sm:w-auto">
-                Upload Profile
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+      <div>
+        <div>
+          <div>Users Stats</div>
+          <button onClick={loadStats}>Load Stats</button>
+        </div>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Users Stats</CardTitle>
-          <Button onClick={loadStats} variant="outline">
-            Load Stats
-          </Button>
-        </CardHeader>
-
-        <CardContent>
+        <div>
           {stats && (
-            <div className="grid gap-4 md:grid-cols-2">
+            <div>
               {stats.map((user: any) => (
-                <div
-                  key={user.id}
-                  className="p-4 rounded-lg border bg-card text-card-foreground"
-                >
-                  <div className="flex items-center space-x-4">
+                <div key={user.id}>
+                  <div>
                     {user.picture && (
-                      <img
-                        src={user.picture}
-                        alt={user.name || 'Profile'}
-                        className="w-12 h-12 rounded-full"
-                      />
+                      <img src={user.picture} alt={user.name || 'Profile'} />
                     )}
                     <div>
-                      <h3 className="font-medium text-lg">
-                        {user.name || 'Sin nombre'}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        {user.email}
-                      </p>
-                      <p className="text-sm text-muted-foreground mt-2">
+                      <h3>{user.name || 'Sin nombre'}</h3>
+                      <p>{user.email}</p>
+                      <p>
                         Roles: {user.roles.map((r: any) => r.name).join(', ')}
                       </p>
                     </div>
@@ -131,8 +106,14 @@ export default function HomePage() {
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </div>
+
+      {stats.length === 0 && (
+        <div>
+          <p>No users found</p>
+        </div>
+      )}
+    </>
   );
 }
