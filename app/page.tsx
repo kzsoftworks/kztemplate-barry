@@ -2,6 +2,8 @@ import { getServerAppUser } from '@/utils/getServerAppUser';
 import Link from 'next/link';
 import { SignUpForm } from '@/components/SignUpForm';
 
+export const dynamic = 'force-dynamic';
+
 export default async function Home() {
   const session = await getServerAppUser();
 
