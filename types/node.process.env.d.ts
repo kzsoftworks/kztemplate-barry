@@ -2,7 +2,7 @@
 
 declare namespace NodeJS {
   export interface ProcessEnv {
-    APP_BASE_URL: string
+    AUTH0_BASE_URL: string
     
     AUTH0_DOMAIN: string
     AUTH0_CLIENT_ID: string
