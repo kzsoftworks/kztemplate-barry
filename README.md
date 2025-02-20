@@ -2,7 +2,7 @@
 
 Welcome to KZ Barry, a powerful Next.js template designed to streamline your development process. This template comes with an integrated AI assistant that will guide you through the entire setup and configuration process.
 
-## Getting Started
+## 1. Setup with AI Assistant
 
 ### Prerequisites
 
@@ -21,6 +21,9 @@ Welcome to KZ Barry, a powerful Next.js template designed to streamline your dev
 
 1. Cursor or Visual Studio Code with Github Copilot
 
+⚠️ **Important Note for Free-Tier AI Users**: 
+When using non-agentic AI assistants (free tier), it's recommended to copy and paste the content of `ASSISTANT_SETUP_GUIDE.md` directly into your conversation. This ensures more accurate and context-aware responses, avoiding potential errors or non-existent features.
+
 ### Setup Steps
 
 1. Clone this template:
@@ -33,7 +36,6 @@ Welcome to KZ Barry, a powerful Next.js template designed to streamline your dev
 2. Open the project in your chosen editor:
 
    **For Windsurf:**
-
    - Open Windsurf
    - Click 'Open Project' and select the cloned directory
    - The AI Assistant will automatically guide you through the setup
@@ -45,29 +47,14 @@ Welcome to KZ Barry, a powerful Next.js template designed to streamline your dev
    ```
 
    **For VS Code:**
-
    ```bash
    code .
    ```
-
    - Open `ASSISTANT_SETUP_GUIDE.md`
    - Start the conversation with:
      ```
      "Hi! I'd like to set up this template. Can you help me get started?"
      ```
-   - The AI will guide you through:
-     - Installing dependencies
-     - Setting up authentication
-     - Configuring your database
-     - Deploying to production
-     - And more!
-
-   💡 **Pro tip**: The AI Assistant understands natural language, so feel free to ask questions like:
-
-   - "What do I need to install first?"
-   - "How do I set up Auth0?"
-   - "Can you help me deploy to Vercel?"
-   - "What should I do next?"
 
 ## How the AI Assistant Works
 
@@ -97,13 +84,72 @@ The AI Assistant is designed to provide:
 - Provides usage examples
 - Shares best practices
 
-## Need Help?
+## Pro Tips for Using the AI Assistant
 
-If you have questions or run into issues:
+💡 **Pro tip**: The AI Assistant understands natural language, so feel free to ask questions like:
 
-1. Ask the AI Assistant! It's here to help
-2. Check the troubleshooting section in `ASSISTANT_SETUP_GUIDE.md`
-3. Contact the KZ team for additional support
+- "What do I need to install first?"
+- "How do I set up Auth0?"
+- "Can you help me deploy to Vercel?"
+- "What should I do next?"
+
+------------------------------------------------------------------------------------------------
+
+## 2. Manual Setup
+
+If you prefer to set up manually, follow these steps:
+
+1. [Installation](#installation)
+2. [Database Setup](#database-setup)
+3. [Endpoints](#endpoints)
+4. [User](#user-synchronization)
+5. [Utilities and Hooks](#utilities-and-hooks)
+6. [Sentry](#sentry)
+7. [Vercel Deploy](#vercel-deployment)
+8. [Help](#need-help)
+
+## Installation
+
+1. Install dependencies:
+   ```bash
+   npm install
+   # or
+   pnpm install
+   ```
+
+2. Copy the environment variables:
+   ```bash
+   cp .env.example .env
+   ```
+
+## Database Setup
+
+### Option 1: Local PostgreSQL
+
+1. Install PostgreSQL locally
+2. Create a new database
+3. Update your `.env` with:
+   ```
+   DATABASE_URL="postgresql://postgres:yourpassword@localhost:5432/your_database_name?schema=public"
+   ```
+
+### Option 2: Vercel with Neon
+
+1. Create a project in [Vercel](https://vercel.com)
+2. In your project settings, go to Storage
+3. Click "Create Database" and select Neon
+4. Copy the connection string to your `.env` file:
+   ```
+   DATABASE_URL="postgres://[user]:[password]@[endpoint]/[database]?sslmode=require"
+   ```
+
+### Run Migrations
+
+Run these commands after setting up either database option:
+```bash
+npx prisma generate
+npx prisma db push
+```
 
 ### Database Schema Overview
 
@@ -114,30 +160,36 @@ The migrations will create the following tables:
 
 The schema includes automatic timestamps and unique identifiers for all records.
 
-#### User Synchronization
+
+## Endpoints
+
+Endpoints can be protected or public. Protected endpoints use `withAPIAuthRequired` wrapper which validates Auth0 session, while public endpoints can be accessed without authentication.
+
+```typescript
+import { authConfig } from '@/lib/auth0';
+
+export const GET = authConfig.withApiAuthRequired(async () => {
+ // Protected endpoint
+});
+```
+
+## User Synchronization
 
 When users interact with Auth0 (login, signup), their Information is automatically synchronized with our database to maintain consistency between Auth0 and our system.
 
-### Endpoints
-
-Endpoints can be protected or public. Protected endpoints use `withAPIAuth` wrapper which validates Auth0 session, while public endpoints can be accessed without authentication.
-
-## Users
+### Users
 
 Retrieve the logged user. Protected endpoint.
-
 ```http
 GET /api/users/me
 ```
 
 Retrieve all registered users. Protected endpoint.
-
 ```http
 GET /api/users
 ```
 
 Create a new user in the system. Protected endpoint.
-
 ```http
 POST /api/users
 ```
@@ -171,8 +223,6 @@ The `credentials: 'include'` option is required to send authentication cookies w
 ## Utilities and Hooks
 
 The template includes several utilities and hooks to streamline common tasks in your project:
-
-### Authentication Utilities
 
 ### Custom Hooks
 
@@ -240,58 +290,31 @@ We use Sentry for error tracking and performance monitoring.
    - Navigate to SDK Setup
    - Find and copy the DSN under "Client Keys (DSN)"
 
-## Environment Variables
-
-### Local Development
-
 Create `.env.sentry-build-plugin` file:
-
 ```plaintext
 # DO NOT commit this file to your repository!
-# The SENTRY_AUTH_TOKEN variable is picked up by the Sentry Build Plugin.
-# Used for uploading source maps during build time to get readable stack traces in production.
 SENTRY_AUTH_TOKEN=[your-auth-token]
 ```
 
 Add to your `.env`:
-
 ```plaintext
 NEXT_PUBLIC_SENTRY_DSN=[your-dsn]
 ```
 
-### Production Setup
+## Vercel Deployment
 
-For production deployments (e.g., Vercel), you can either:
+1. Push your code to GitHub
+2. Go to [Vercel](https://vercel.com)
+3. Import your repository
+4. Configure your environment variables:
+   - Copy all variables from your `.env`
+   - Update URLs to match your production domain
+5. Deploy!
 
-1. Add `SENTRY_AUTH_TOKEN` directly in your deployment platform's environment variables:
+## Need Help?
 
-2. Or add it to your existing `.env` file (ensure it's included in your deployment)
+If you have questions or run into issues:
 
-## Configuration
-
-Sentry is automatically configured through `next.config.js` and `sentry.client.config.ts`/`sentry.server.config.ts`.
-
-## Error Monitoring
-
-Sentry will automatically capture:
-
-- Unhandled exceptions
-- API errors
-- Client-side errors
-- Performance metrics
-
-## Custom Error Tracking
-
-```typescript
-try {
-  // Your code
-} catch (error) {
-  Sentry.captureException(error);
-}
-```
-
-## Example
-
-Check out the Sentry example page at `/sentry-example-page` in your local environment.
-
-For more details, visit [Sentry Documentation](https://docs.sentry.io/platforms/javascript/guides/nextjs/).
+1. Ask the AI Assistant! It's here to help
+2. Check the troubleshooting section in `ASSISTANT_SETUP_GUIDE.md`
+3. Contact the KZ team for additional support
