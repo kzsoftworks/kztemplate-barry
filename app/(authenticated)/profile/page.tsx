@@ -2,6 +2,8 @@ import UserDataDisplay from '@/src/components/UserDataDisplay';
 import { getServerAppUser } from '@/src/utils/getServerAppUser';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 export default async function Profile() {
   const { user } = await getServerAppUser();
 
