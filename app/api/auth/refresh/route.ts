@@ -6,7 +6,7 @@ export async function POST() {
   try {
     const session = await authConfig.getSession();
     if (!session?.user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json('Unauthorized', { status: 401 });
     }
 
     // Get the latest user data from database
@@ -17,7 +17,7 @@ export async function POST() {
     });
 
     if (!dbUser) {
-      return new NextResponse('User not found', { status: 404 });
+      return NextResponse.json('User not found', { status: 404 });
     }
 
     // Update the session with the latest dbUser data
@@ -26,9 +26,9 @@ export async function POST() {
       user: { ...session.user, dbData: dbUser }
     });
 
-    return new NextResponse('Session refreshed', { status: 200 });
+    return NextResponse.json('Session refreshed', { status: 200 });
   } catch (error) {
     console.error('Error refreshing session:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    return NextResponse.json('Internal Server Error', { status: 500 });
   }
 }
