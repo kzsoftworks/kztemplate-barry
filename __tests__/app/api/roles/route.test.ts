@@ -60,6 +60,32 @@ describe('Roles API Route', () => {
 
     it('should handle database errors when fetching roles', async () => {
       // Mock database error
+      const unknownError = { message: 'Unknown error' };
+      (prisma.role.findMany as jest.Mock).mockRejectedValue(unknownError);
+
+      // Create mock request
+      const req = new NextRequest('https://example.com/api/roles');
+
+      // Call the GET handler
+      const result = await GET(req);
+
+      // Assertions
+      expect(NextResponse.json).toHaveBeenCalledWith(
+        {
+          error: 'Failed to fetch roles',
+          details: 'Unknown error'
+        },
+        { status: 500 }
+      );
+
+      const responseBody = await result.json();
+      expect(responseBody.error).toBe('Failed to fetch roles');
+      expect(responseBody.details).toBe('Unknown error');
+      expect(result.status).toBe(500);
+    });
+
+    it('should handle Error instance in database errors', async () => {
+      // Mock database error
       const dbError = new Error('Database connection failed');
       (prisma.role.findMany as jest.Mock).mockRejectedValue(dbError);
 

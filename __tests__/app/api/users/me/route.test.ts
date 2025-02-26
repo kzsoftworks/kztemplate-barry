@@ -146,3 +146,24 @@ describe('GET /api/users/me', () => {
     expect(result.status).toBe(500);
   });
 });
+
+describe('Users Me API Route', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should return 404 when no user session exists', async () => {
+    // Mock getSession to return null
+    (authConfig.getSession as jest.Mock).mockResolvedValue(null);
+
+    const req = new NextRequest('https://example.com/api/users/me');
+    const res = {};
+
+    const result = await GET(req, res);
+
+    expect(result.status).toBe(404);
+    const data = await result.json();
+    expect(data).toEqual({ error: 'No user found' });
+    expect(prisma.user.findUnique).not.toHaveBeenCalled();
+  });
+});

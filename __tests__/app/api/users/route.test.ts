@@ -80,6 +80,31 @@ describe('Users API Route', () => {
 
     it('should handle database errors when fetching users', async () => {
       // Mock database error
+      const unknownError = { message: 'Unknown error' };
+      (prisma.user.findMany as jest.Mock).mockRejectedValue(unknownError);
+
+      // Create mock request
+      const req = new NextRequest('https://example.com/api/users');
+
+      // Call the GET handler
+      const result = await GET(req, mockContext);
+
+      // Assertions
+      expect(NextResponse.json).toHaveBeenCalledWith(
+        {
+          error: 'Failed to fetch users',
+          details: 'Unknown error'
+        },
+        { status: 500 }
+      );
+      const responseBody = await result.json();
+      expect(responseBody.error).toBe('Failed to fetch users');
+      expect(responseBody.details).toBe('Unknown error');
+      expect(result.status).toBe(500);
+    });
+
+    it('should handle Error instance in database errors', async () => {
+      // Mock database error
       const dbError = new Error('Database connection failed');
       (prisma.user.findMany as jest.Mock).mockRejectedValue(dbError);
 
@@ -188,6 +213,38 @@ describe('Users API Route', () => {
       const responseBody = await result.json();
       expect(responseBody.error).toBe('Failed to create user');
       expect(responseBody.details).toBe('Creation failed');
+    });
+
+    it('should handle non-Error object during user creation', async () => {
+      // Mock user creation data
+      const newUserData = {
+        email: 'newuser@example.com',
+        name: 'New User',
+        roles: ['user']
+      };
+
+      // Configure mock request
+      const req = new NextRequest('https://example.com/api/users');
+      (req.json as jest.Mock).mockResolvedValue(newUserData);
+
+      // Configure mock Prisma to throw a non-Error object
+      const nonErrorObject = { message: 'Database error' };
+      (prisma.user.create as jest.Mock).mockRejectedValue(nonErrorObject);
+
+      // Call the POST handler
+      const result = await POST(req, mockContext);
+
+      // Assertions
+      expect(NextResponse.json).toHaveBeenCalledWith(
+        {
+          error: 'Failed to create user',
+          details: 'Unknown error'
+        },
+        { status: 500 }
+      );
+      const responseBody = await result.json();
+      expect(responseBody.error).toBe('Failed to create user');
+      expect(responseBody.details).toBe('Unknown error');
     });
   });
 });

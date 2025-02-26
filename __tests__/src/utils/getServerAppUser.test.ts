@@ -149,4 +149,22 @@ describe('getServerAppUser', () => {
 
     expect(prisma.user.findUnique).not.toHaveBeenCalled();
   });
+
+  it('should handle unknown errors during session fetch', async () => {
+    // Mock unknown error
+    const unknownError = { message: 'Unknown error' };
+    (authConfig.getSession as jest.Mock).mockRejectedValue(unknownError);
+
+    // Call the function
+    const result = await getServerAppUser();
+
+    // Assertions
+    expect(result).toEqual({
+      session: null,
+      user: null,
+      isLoading: false,
+      error: new Error('Unknown error occurred')
+    });
+    expect(prisma.user.findUnique).not.toHaveBeenCalled();
+  });
 });

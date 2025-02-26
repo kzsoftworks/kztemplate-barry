@@ -106,6 +106,46 @@ describe('Auth0 Route Handlers', () => {
   });
 
   describe('callback handler', () => {
+    it('should handle case when session has no user', async () => {
+      const mockSession = {};
+      const req = new NextRequest('https://example.com/api/auth/callback');
+      const result = await handlers.callback.afterCallback(req, mockSession);
+      expect(result).toEqual(mockSession);
+    });
+
+    it('should handle successful user creation and update', async () => {
+      const mockSession: Partial<Session> = {
+        user: {
+          sub: 'auth0|123',
+          email: 'test@example.com',
+          name: 'Test User',
+          picture: 'https://example.com/picture.jpg'
+        }
+      };
+
+      const mockDbUser = {
+        id: 1,
+        auth0Id: 'auth0|123',
+        email: 'test@example.com',
+        name: 'Test User',
+        picture: 'https://example.com/picture.jpg'
+      };
+
+      (prisma.user.findUnique as jest.Mock).mockResolvedValue(null);
+      (syncAuth0User as jest.Mock).mockResolvedValue(mockDbUser);
+
+      const req = new NextRequest('https://example.com/api/auth/callback');
+      const result = await handlers.callback.afterCallback(req, mockSession);
+
+      expect(result).toEqual({
+        ...mockSession,
+        user: {
+          ...mockSession.user,
+          dbData: mockDbUser
+        }
+      });
+    });
+
     it('should sync Auth0 user with database after successful login', async () => {
       // Get the callback handler
       const callbackHandler = handlers.callback;
@@ -175,6 +215,108 @@ describe('Auth0 Route Handlers', () => {
 
       // Verify original session was returned unchanged
       expect(result).toEqual(mockSession);
+    });
+
+    it('should handle case when user is not found in database', async () => {
+      const mockSession: Partial<Session> = {
+        user: {
+          sub: 'auth0|123',
+          email: 'test@example.com',
+          name: 'Test User'
+        }
+      };
+
+      // Mock user lookup and sync
+      (prisma.user.findUnique as jest.Mock).mockResolvedValue(null);
+      (syncAuth0User as jest.Mock).mockResolvedValue(null);
+
+      const req = new NextRequest('https://example.com/api/auth/callback');
+      const result = await handlers.callback.afterCallback(req, mockSession);
+
+      // Verify database operations were called
+      expect(prisma.user.findUnique).toHaveBeenCalledWith({
+        where: { email: mockSession.user?.email }
+      });
+      expect(syncAuth0User).toHaveBeenCalledWith({
+        sub: mockSession.user?.sub,
+        email: mockSession.user?.email,
+        name: mockSession.user?.name,
+        roles: mockSession.user?.roles,
+        picture: mockSession.user?.picture
+      });
+
+      // Verify original session was returned unchanged
+      expect(result).toEqual(mockSession);
+    });
+
+    it('should handle database error during user lookup', async () => {
+      const mockSession: Partial<Session> = {
+        user: {
+          sub: 'auth0|123',
+          email: 'test@example.com',
+          name: 'Test User'
+        }
+      };
+
+      // Mock database error during findUnique
+      (prisma.user.findUnique as jest.Mock).mockRejectedValue(
+        new Error('Database error')
+      );
+
+      const req = new NextRequest('https://example.com/api/auth/callback');
+      const result = await handlers.callback.afterCallback(req, mockSession);
+
+      // Verify original session was returned unchanged
+      expect(result).toEqual(mockSession);
+    });
+
+    it('should handle database error during user creation', async () => {
+      const mockSession: Partial<Session> = {
+        user: {
+          sub: 'auth0|123',
+          email: 'test@example.com',
+          name: 'Test User'
+        }
+      };
+
+      // Mock user not found and error during creation
+      (prisma.user.findUnique as jest.Mock).mockResolvedValue(null);
+      (syncAuth0User as jest.Mock).mockRejectedValue(
+        new Error('Creation error')
+      );
+
+      const req = new NextRequest('https://example.com/api/auth/callback');
+      const result = await handlers.callback.afterCallback(req, mockSession);
+
+      // Verify original session was returned unchanged
+      expect(result).toEqual(mockSession);
+    });
+
+    it('should handle database synchronization failure', async () => {
+      const mockSession: Partial<Session> = {
+        user: {
+          sub: 'auth0|123',
+          email: 'test@example.com',
+          name: 'Test User'
+        }
+      };
+
+      // Mock database error during synchronization
+      (prisma.user.findUnique as jest.Mock).mockResolvedValue(null);
+      (syncAuth0User as jest.Mock).mockRejectedValue(new Error('Sync failed'));
+
+      const req = new NextRequest('https://example.com/api/auth/callback');
+      const result = await handlers.callback.afterCallback(req, mockSession);
+
+      // Verify error was logged and session returned unchanged
+      expect(result).toEqual(mockSession);
+      expect(syncAuth0User).toHaveBeenCalledWith({
+        sub: mockSession.user?.sub,
+        email: mockSession.user?.email,
+        name: mockSession.user?.name,
+        roles: mockSession.user?.roles,
+        picture: mockSession.user?.picture
+      });
     });
 
     it('should return session unchanged when no user in session', async () => {

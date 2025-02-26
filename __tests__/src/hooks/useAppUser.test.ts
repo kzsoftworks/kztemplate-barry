@@ -88,4 +88,118 @@ describe('useAppUser', () => {
 
     expect(fetch).toHaveBeenCalled();
   });
+
+  it('should handle error response with error message during refreshDbData', async () => {
+    // Mock failed fetch response with error message
+    const errorMessage = 'Custom error message';
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      ok: false,
+      text: jest.fn().mockResolvedValue(errorMessage)
+    });
+
+    (useUser as jest.Mock).mockReturnValue({
+      user: { email: 'test@example.com' },
+      isLoading: false
+    });
+
+    const { result } = renderHook(() => useAppUser());
+
+    await expect(
+      act(async () => {
+        await result.current.refreshDbData();
+      })
+    ).rejects.toThrow(errorMessage);
+
+    expect(fetch).toHaveBeenCalled();
+  });
+
+  it('should handle empty error response during refreshDbData', async () => {
+    // Mock failed fetch response with empty error message
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      ok: false,
+      text: jest.fn().mockResolvedValue('')
+    });
+
+    (useUser as jest.Mock).mockReturnValue({
+      user: { email: 'test@example.com' },
+      isLoading: false
+    });
+
+    const { result } = renderHook(() => useAppUser());
+
+    await expect(
+      act(async () => {
+        await result.current.refreshDbData();
+      })
+    ).rejects.toThrow('Failed to refresh user data');
+
+    expect(fetch).toHaveBeenCalled();
+  });
+
+  it('should handle error response with error message during refreshDbData', async () => {
+    // Mock failed fetch response with error message
+    const errorMessage = 'Custom error message';
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      ok: false,
+      text: jest.fn().mockResolvedValue(errorMessage)
+    });
+
+    (useUser as jest.Mock).mockReturnValue({
+      user: { email: 'test@example.com' },
+      isLoading: false
+    });
+
+    const { result } = renderHook(() => useAppUser());
+
+    await expect(
+      act(async () => {
+        await result.current.refreshDbData();
+      })
+    ).rejects.toThrow(errorMessage);
+
+    expect(fetch).toHaveBeenCalled();
+  });
+
+  it('should handle empty error response during refreshDbData', async () => {
+    // Mock failed fetch response with empty error message
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      ok: false,
+      text: jest.fn().mockResolvedValue('')
+    });
+
+    (useUser as jest.Mock).mockReturnValue({
+      user: { email: 'test@example.com' },
+      isLoading: false
+    });
+
+    const { result } = renderHook(() => useAppUser());
+
+    await expect(
+      act(async () => {
+        await result.current.refreshDbData();
+      })
+    ).rejects.toThrow('Failed to refresh user data');
+
+    expect(fetch).toHaveBeenCalled();
+  });
+
+  it('should handle network errors during refreshDbData', async () => {
+    // Mock network error
+    (fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
+
+    (useUser as jest.Mock).mockReturnValue({
+      user: { email: 'test@example.com' },
+      isLoading: false
+    });
+
+    const { result } = renderHook(() => useAppUser());
+
+    await expect(
+      act(async () => {
+        await result.current.refreshDbData();
+      })
+    ).rejects.toThrow('Network error');
+
+    expect(fetch).toHaveBeenCalled();
+  });
 });
