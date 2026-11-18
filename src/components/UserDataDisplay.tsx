@@ -1,89 +1,46 @@
 'use client';
 
-import { useAppUser } from '@/src/hooks/useAppUser';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card';
+import { useAppUser } from '@/hooks/useAppUser';
 
-export default function UserDataDisplay() {
-  const { user, isLoading, error, refreshDbData } = useAppUser();
-
-  const handleRefresh = async () => {
-    try {
-      await refreshDbData();
-    } catch (error) {
-      console.error('Failed to refresh:', error);
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <article aria-busy="true">
-        <h3>Loading user data...</h3>
-      </article>
-    );
-  }
-
-  if (error) {
-    return (
-      <article>
-        <h3>Error loading user data</h3>
-        <p>{error.message}</p>
-      </article>
-    );
-  }
-
-  if (!user) {
-    return (
-      <article>
-        <h3>Not logged in</h3>
-        <p>Please log in to view your data</p>
-        <a href="/api/auth/login" role="button">
-          Log in
-        </a>
-      </article>
-    );
-  }
+export function UserDataDisplay() {
+  const { user, isLoading, error, refresh } = useAppUser();
 
   return (
-    <article>
-      <header>
-        <h3>From Client User Data Component</h3>
-        {user.picture && (
-          <img
-            src={user.picture}
-            alt="Profile"
-            style={{
-              width: '64px',
-              height: '64px',
-              borderRadius: '50%',
-              marginBottom: '1rem'
-            }}
-          />
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Read in the browser</CardTitle>
+        <CardDescription>
+          <code>useAppUser()</code> in a Client Component, limited by RLS.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4 text-sm">
+        {isLoading && <p role="status">Loading…</p>}
+        {error && (
+          <p role="alert" className="text-destructive">
+            {error}
+          </p>
         )}
-      </header>
-
-      <dl>
-        <dt>Email</dt>
-        <dd>{user.email}</dd>
-
-        {user.name && (
-          <>
-            <dt>Name</dt>
-            <dd>{user.dbData?.name}</dd>
-          </>
+        {!isLoading && !user && <p>Not signed in.</p>}
+        {user && (
+          <dl className="grid grid-cols-[8rem_1fr] gap-y-2">
+            <dt className="text-muted-foreground">Email</dt>
+            <dd>{user.email ?? '—'}</dd>
+            <dt className="text-muted-foreground">Name</dt>
+            <dd>{user.profile?.name ?? '—'}</dd>
+          </dl>
         )}
-
-        {user.dbData?.createdAt && (
-          <>
-            <dt>Member since</dt>
-            <dd>{new Date(user.dbData.createdAt).toLocaleDateString()}</dd>
-          </>
-        )}
-      </dl>
-
-      <footer>
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <button onClick={handleRefresh}>Refresh Data</button>
-        </div>
-      </footer>
-    </article>
+        <Button type="button" variant="outline" size="sm" onClick={refresh}>
+          Refresh
+        </Button>
+      </CardContent>
+    </Card>
   );
 }

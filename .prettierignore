@@ -1,0 +1,13 @@
+.next
+node_modules
+package-lock.json
+skills-lock.json
+playwright-report
+test-results
+.harness
+.beads
+.claude/skills
+.agents
+supabase/.temp
+src/types/database.types.ts
+next-env.d.ts

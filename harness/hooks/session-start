@@ -1,0 +1,30 @@
+#!/usr/bin/env node
+// SessionStart hook: give every shell command of this Claude Code session the
+// same HARNESS_SESSION_ID, so harness/bin/lf-score can keep one context file
+// per session (.harness/context/<session>.json) and tag its events.
+//
+// Claude Code passes the session as JSON on stdin and, for SessionStart hooks,
+// a file (CLAUDE_ENV_FILE) whose `export` lines are applied to later commands.
+// The hook must never block a session: any failure is ignored.
+
+import { appendFileSync, readFileSync } from 'node:fs';
+
+try {
+  const input = JSON.parse(readFileSync(0, 'utf8') || '{}');
+  const sessionId = String(input.session_id ?? '').replace(
+    /[^A-Za-z0-9._-]/g,
+    '_'
+  );
+  const envFile = process.env.CLAUDE_ENV_FILE;
+
+  if (sessionId && envFile) {
+    appendFileSync(
+      envFile,
+      `export HARNESS_SESSION_ID='${sessionId}'\n` +
+        // beads reads this to stamp the session on closed issues.
+        `export CLAUDE_SESSION_ID="\${CLAUDE_SESSION_ID:-${sessionId}}"\n`
+    );
+  }
+} catch {
+  // Ignore: lf-score falls back to the "local" session.
+}

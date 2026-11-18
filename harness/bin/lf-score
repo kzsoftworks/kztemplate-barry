@@ -1,0 +1,178 @@
+#!/usr/bin/env node
+// lf-score: record a harness process event for the current session.
+//
+// Every step of the process (intent, plan, build, verify, review, ship) calls
+// this so the history of a request can be reconstructed afterwards. Events are
+// appended to .harness/events.jsonl, tagged with the beads issue, its epic and
+// the current phase.
+//
+// The name and interface match the Langfuse-backed original. This version only
+// writes the local log; a Langfuse sender can be added here later without
+// changing any caller.
+//
+// Usage:
+//   lf-score bd_issue <id> [--epic <id>]   bind this session to an issue (phase: build)
+//   lf-score phase <intent|plan|build|verify|review|ship>
+//   lf-score gate.<name> <pass|fail|skip>  result of a verify gate
+//   lf-score review <APPROVED|CHANGES>     reviewer verdict
+//   lf-score rework 1                      one more build/verify/review round
+//   lf-score <name> <value>                any other score
+//   lf-score show                          print the session context
+//   lf-score clear                         forget the session context (after ship)
+// Options: --comment "<text>"
+
+import { execFileSync } from 'node:child_process';
+import {
+  appendFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync
+} from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const PHASES = ['intent', 'plan', 'build', 'verify', 'review', 'ship'];
+
+function fail(message) {
+  console.error(`lf-score: ${message}`);
+  process.exit(2);
+}
+
+function repoRoot() {
+  try {
+    return execFileSync('git', ['rev-parse', '--show-toplevel'], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore']
+    }).trim();
+  } catch {
+    return resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
+  }
+}
+
+function parseArgs(argv) {
+  const positional = [];
+  const options = {};
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+    if (arg === '--comment' || arg === '--epic') {
+      const value = argv[i + 1];
+      if (value === undefined) fail(`${arg} needs a value`);
+      options[arg.slice(2)] = value;
+      i += 1;
+    } else if (arg === '-h' || arg === '--help') {
+      options.help = true;
+    } else {
+      positional.push(arg);
+    }
+  }
+  return { positional, options };
+}
+
+const { positional, options } = parseArgs(process.argv.slice(2));
+const [name, value] = positional;
+
+if (options.help || !name) {
+  const source = readFileSync(fileURLToPath(import.meta.url), 'utf8');
+  const usage = source
+    .split('\n')
+    .filter((line) => line.startsWith('//'))
+    .map((line) => line.replace(/^\/\/ ?/, ''))
+    .join('\n');
+  console.log(usage);
+  process.exit(name ? 0 : 2);
+}
+
+const root = repoRoot();
+const harnessDir = process.env.HARNESS_DIR ?? join(root, '.harness');
+const sessionId = (
+  process.env.HARNESS_SESSION_ID ||
+  process.env.CLAUDE_SESSION_ID ||
+  'local'
+).replace(/[^A-Za-z0-9._-]/g, '_');
+const contextFile = join(harnessDir, 'context', `${sessionId}.json`);
+const eventsFile = join(harnessDir, 'events.jsonl');
+
+function readContext() {
+  if (!existsSync(contextFile)) return {};
+  try {
+    return JSON.parse(readFileSync(contextFile, 'utf8'));
+  } catch {
+    return {};
+  }
+}
+
+function writeContext(context) {
+  mkdirSync(dirname(contextFile), { recursive: true });
+  writeFileSync(contextFile, `${JSON.stringify(context, null, 2)}\n`);
+}
+
+/** Child issues are "<parent>.<n>", so the epic is everything before the last dot. */
+function epicOf(issueId) {
+  const dot = issueId.lastIndexOf('.');
+  return dot > 0 ? issueId.slice(0, dot) : issueId;
+}
+
+let context = readContext();
+
+if (name === 'show') {
+  console.log(JSON.stringify({ session: sessionId, ...context }, null, 2));
+  process.exit(0);
+}
+
+if (name === 'clear') {
+  rmSync(contextFile, { force: true });
+  console.log(`lf-score: cleared context for session ${sessionId}`);
+  process.exit(0);
+}
+
+if (value === undefined) fail(`"${name}" needs a value (see --help)`);
+
+if (name === 'bd_issue') {
+  context = {
+    bd_issue: value,
+    epic: options.epic ?? epicOf(value),
+    phase: 'build'
+  };
+  writeContext(context);
+} else if (name === 'phase') {
+  if (!PHASES.includes(value)) {
+    fail(`unknown phase "${value}". Use one of: ${PHASES.join(', ')}`);
+  }
+  context = { ...context, phase: value };
+  writeContext(context);
+} else if (name.startsWith('gate.')) {
+  if (!['pass', 'fail', 'skip'].includes(value)) {
+    fail(`gate result must be pass, fail or skip (got "${value}")`);
+  }
+} else if (name === 'review') {
+  if (!['APPROVED', 'CHANGES'].includes(value)) {
+    fail(`review verdict must be APPROVED or CHANGES (got "${value}")`);
+  }
+}
+
+const tags = ['harness-event'];
+if (context.bd_issue) tags.push(`bd:${context.bd_issue}`);
+if (context.epic) tags.push(`epic:${context.epic}`);
+if (context.phase) tags.push(`phase:${context.phase}`);
+
+const event = {
+  ts: new Date().toISOString(),
+  session: sessionId,
+  name,
+  value,
+  bd_issue: context.bd_issue ?? null,
+  epic: context.epic ?? null,
+  phase: context.phase ?? null,
+  tags,
+  ...(options.comment ? { comment: options.comment } : {})
+};
+
+mkdirSync(harnessDir, { recursive: true });
+appendFileSync(eventsFile, `${JSON.stringify(event)}\n`);
+console.log(
+  `lf-score: ${name}=${value}` +
+    (context.bd_issue ? ` [bd:${context.bd_issue}]` : '') +
+    (context.phase ? ` [phase:${context.phase}]` : '')
+);

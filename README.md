@@ -1,320 +1,134 @@
-# KZ Barry Template 🤖
+# KZ Barry
 
-Welcome to KZ Barry, a powerful Next.js template designed to streamline your development process. This template comes with an integrated AI assistant that will guide you through the entire setup and configuration process.
+A starter for building an app **with coding agents**. The stack is wired up,
+and the repo carries the process the agents follow.
 
-## 1. Setup with AI Assistant
+- **Next.js 16** (App Router, React 19, TypeScript, Tailwind CSS 4, shadcn/ui)
+- **Supabase** for Auth and Postgres, with Row Level Security on every table
+- **Sentry** for errors and tracing, split by environment
+- **Vercel**, with a Preview per pull request bound to its own Supabase branch
+- **An agent harness** for Claude Code: a fixed process, an issue tracker, quality
+  gates, a reviewer and stack-specific skills
 
-### Prerequisites
+## Quick start
 
-#### Option 1: Recommended - Windsurf Editor
+Requirements: Node.js 22.12+, git, and [beads](https://github.com/gastownhall/beads)
+(`npm i -g @beads/bd`). Docker is needed for the local Supabase stack.
 
-1. Download and install [Windsurf](https://www.codeium.com/windsurf), the world's first agentic IDE by Codeium
-   - Built-in AI assistant support
-   - Seamless template integration
-   - Enhanced development experience
-
-#### Option 2: Alternative - VS Code with Codeium
-
-1. Install [VS Code or Codeium Extension](https://code.visualstudio.com/download)
-
-#### Option 3: Alternative - Any Editor with an AI Agent
-
-1. Cursor or Visual Studio Code with Github Copilot
-
-⚠️ **Important Note for Free-Tier AI Users**: 
-When using non-agentic AI assistants (free tier), it's recommended to copy and paste the content of `ASSISTANT_SETUP_GUIDE.md` directly into your conversation. This ensures more accurate and context-aware responses, avoiding potential errors or non-existent features.
-
-### Setup Steps
-
-1. Clone this template:
-
-   ```bash
-   git clone https://github.com/kzsoftworks/kztemplate-barry.git
-   cd kztemplate-barry
-   ```
-
-2. Open the project in your chosen editor:
-
-   **For Windsurf:**
-   - Open Windsurf
-   - Click 'Open Project' and select the cloned directory
-   - The AI Assistant will automatically guide you through the setup
-
-   or
-
-   ```bash
-   windsurf .
-   ```
-
-   **For VS Code:**
-   ```bash
-   code .
-   ```
-   - Open `ASSISTANT_SETUP_GUIDE.md`
-   - Start the conversation with:
-     ```
-     "Hi! I'd like to set up this template. Can you help me get started?"
-     ```
-
-## How the AI Assistant Works
-
-The AI Assistant is designed to provide:
-
-💬 **Interactive Guidance**
-
-- Real-time help with setup and configuration
-- Answers to your questions about the template
-- Troubleshooting assistance
-
-🔍 **Automatic Verification**
-
-- Checks if required tools are installed
-- Validates your configuration
-- Ensures best practices are followed
-
-🛠 **Setup Automation**
-
-- Helps run necessary commands
-- Guides you through configuration
-- Provides solutions to common issues
-
-📖 **Documentation**
-
-- Explains template features
-- Provides usage examples
-- Shares best practices
-
-## Pro Tips for Using the AI Assistant
-
-💡 **Pro tip**: The AI Assistant understands natural language, so feel free to ask questions like:
-
-- "What do I need to install first?"
-- "How do I set up Auth0?"
-- "Can you help me deploy to Vercel?"
-- "What should I do next?"
-
-------------------------------------------------------------------------------------------------
-
-## 2. Manual Setup
-
-If you prefer to set up manually, follow these steps:
-
-1. [Installation](#installation)
-2. [Database Setup](#database-setup)
-3. [Endpoints](#endpoints)
-4. [User](#user-synchronization)
-5. [Utilities and Hooks](#utilities-and-hooks)
-6. [Sentry](#sentry)
-7. [Vercel Deploy](#vercel-deployment)
-8. [Help](#need-help)
-
-## Installation
-
-1. Install dependencies:
-   ```bash
-   npm install
-   # or
-   pnpm install
-   ```
-
-2. Copy the environment variables:
-   ```bash
-   cp .env.example .env
-   ```
-
-## Database Setup
-
-### Option 1: Local PostgreSQL
-
-1. Install PostgreSQL locally
-2. Create a new database
-3. Update your `.env` with:
-   ```
-   DATABASE_URL="postgresql://postgres:yourpassword@localhost:5432/your_database_name?schema=public"
-   ```
-
-### Option 2: Vercel with Neon
-
-1. Create a project in [Vercel](https://vercel.com)
-2. In your project settings, go to Storage
-3. Click "Create Database" and select Neon
-4. Copy the connection string to your `.env` file:
-   ```
-   DATABASE_URL="postgres://[user]:[password]@[endpoint]/[database]?sslmode=require"
-   ```
-
-### Run Migrations
-
-Run these commands after setting up either database option:
 ```bash
-npx prisma generate
-npx prisma db push
+git clone https://github.com/kzsoftworks/kztemplate-barry.git my-app
+cd my-app
+npm install
+harness/bin/setup myapp        # checks tools, initialises the issue tracker
+npm run dev                    # http://localhost:3000
 ```
 
-### Database Schema Overview
+The app boots without any service configured. To enable sign-in locally:
 
-The migrations will create the following tables:
-
-- `users`: Stores user information including Auth0 authentication details, email, and profile data
-- `roles`: Manages user roles with a many-to-many relationship to users
-
-The schema includes automatic timestamps and unique identifiers for all records.
-
-
-## Endpoints
-
-Endpoints can be protected or public. Protected endpoints use `withAPIAuthRequired` wrapper which validates Auth0 session, while public endpoints can be accessed without authentication.
-
-```typescript
-import { authConfig } from '@/lib/auth0';
-
-export const GET = authConfig.withApiAuthRequired(async () => {
- // Protected endpoint
-});
+```bash
+npm run db:start               # local Supabase; prints the URL and keys
+cp .env.example .env.local     # paste NEXT_PUBLIC_SUPABASE_URL and the publishable key
+npm run dev
 ```
 
-## User Synchronization
+For the full setup (Supabase project, Branching, Vercel, Sentry), open the repo
+in Claude Code and say:
 
-When users interact with Auth0 (login, signup), their Information is automatically synchronized with our database to maintain consistency between Auth0 and our system.
+> Help me set up this template. Follow ASSISTANT_SETUP_GUIDE.md.
 
-### Users
+or follow [`ASSISTANT_SETUP_GUIDE.md`](./ASSISTANT_SETUP_GUIDE.md) yourself.
 
-Retrieve the logged user. Protected endpoint.
-```http
-GET /api/users/me
-```
+## How work happens
 
-Retrieve all registered users. Protected endpoint.
-```http
-GET /api/users
-```
+Every request goes through the same cycle. In Claude Code:
 
-Create a new user in the system. Protected endpoint.
-```http
-POST /api/users
-```
+| Step   | You run                | What happens                                                              |
+| ------ | ---------------------- | ------------------------------------------------------------------------- |
+| Intent | `/intent`              | The goal is written into `INTENT.md`                                      |
+| Plan   | `/plan-to-beads`       | An epic and issues with acceptance criteria are created in beads          |
+| Build  | "work on `<issue id>`" | The agent claims the issue and writes code and tests                      |
+| Verify | `/verify`              | Typecheck, lint, unit tests and e2e run; each result is recorded          |
+| Review | (part of `/verify`)    | A separate reviewer agent checks the change against `POLICY.md`           |
+| Ship   | `/ship`                | Learnings are noted on the issue, it is closed, a PR is opened if you ask |
 
-#### How to make an API call as we dont use accessTokens directly?
+Build, verify and review repeat until the reviewer approves.
 
-```typescript
-// Example of fetching users from the API
-const fetchUsers = async () => {
-  try {
-    const response = await fetch('/api/users', {
-      credentials: 'include' // Required for Auth0 session
-    });
+| File / folder     | What it is for                                                         |
+| ----------------- | ---------------------------------------------------------------------- |
+| `INTENT.md`       | Why the product exists and what each request is for                    |
+| `CLAUDE.md`       | How we work: process, commands, conventions                            |
+| `POLICY.md`       | The rules a change must meet to be approved                            |
+| `.claude/skills/` | Process skills and stack skills ([list](./.claude/skills/VENDORED.md)) |
+| `.claude/agents/` | The `reviewer` subagent                                                |
+| `harness/`        | `verify`, `lf-score`, `setup`, the harness changelog and evals         |
+| `.beads/`         | The work: epics, issues, dependencies, notes (created by setup)        |
+| `.harness/`       | Local event log of every process step (not committed)                  |
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message);
-    }
+The harness is at v0.1: see [`harness/CHANGELOG.md`](./harness/CHANGELOG.md)
+for what it includes and how it is meant to improve.
 
-    const users = await response.json();
-    return users;
-  } catch (error) {
-    console.error('Failed to fetch users:', error);
-    throw error;
-  }
-};
-```
+## Commands
 
-The `credentials: 'include'` option is required to send authentication cookies with the request.
+| Command              | Does                                               |
+| -------------------- | -------------------------------------------------- |
+| `npm run dev`        | Start the app                                      |
+| `harness/bin/verify` | Run the four gates (`--db` adds the database gate) |
+| `npm run typecheck`  | Generate route types and type-check                |
+| `npm run lint`       | ESLint                                             |
+| `npm test`           | Unit tests (Vitest)                                |
+| `npm run test:e2e`   | End-to-end tests (Playwright)                      |
+| `npm run db:start`   | Start local Supabase (Docker)                      |
+| `npm run db:reset`   | Re-apply migrations and seed locally               |
+| `npm run db:types`   | Regenerate `src/types/database.types.ts`           |
+| `npm run test:db`    | Database tests (pgTAP) in `supabase/tests/`        |
+| `bd ready`           | Issues that can be worked on now                   |
 
-## Utilities and Hooks
+## What is in the app
 
-The template includes several utilities and hooks to streamline common tasks in your project:
+- Email + password sign-up and sign-in (`/sign-up`, `/login`), a protected
+  `/profile` page, and sign-out.
+- `src/proxy.ts` refreshes the session and keeps signed-out visitors out of
+  private routes. Routes are private unless listed in `src/lib/routes.ts`.
+- `getServerAppUser()` (server) and `useAppUser()` (client) return the current
+  user with their profile row.
+- Tables `profiles`, `roles` and `user_roles`, with RLS policies and tests. A
+  profile is created automatically when a user signs up.
+- `/sentry-example-page` throws a sample error on the client and the server to
+  check the Sentry setup. Delete it once verified.
 
-### Custom Hooks
+## Pull request Previews
 
-#### useAppUser
+Opening a pull request creates:
 
-Enhanced version of Auth0's useUser hook that includes database user data.
+1. a **Supabase preview branch**: an isolated database built from
+   `supabase/migrations/` and `supabase/seed.sql`, with no production data;
+2. a **Vercel Preview** whose Supabase variables point at that branch.
 
-```typescript
-// Example usage
-import { useAppUser } from '@/hooks/useAppUser';
+The build refuses to produce a Preview that has no Supabase variables or that
+points at the production project (`scripts/verify-preview-binding.mjs`). Two
+GitHub workflows run on each PR: `CI` (gates, build, database tests) and
+`E2E on Preview` (Playwright against the deployed URL).
 
-function Profile() {
-  const { user, isLoading } = useAppUser();
+This needs Supabase Branching, which is a paid Supabase feature billed per
+active branch. Setup steps are in the guide.
 
-  if (isLoading) return <div>Loading...</div>;
+## Environment variables
 
-  return (
-    <div>
-      <h1>{user?.name}</h1>
-      <p>{user?.dbData?.email}</p>
-    </div>
-  );
-}
-```
+All of them are documented in [`.env.example`](./.env.example).
 
-#### getServerAppUser
+| Variable                                            | Where                | Notes                                        |
+| --------------------------------------------------- | -------------------- | -------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`                          | local, Vercel        | Synced to Vercel by the Supabase integration |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`              | local, Vercel        | Safe in the browser                          |
+| `SUPABASE_SECRET_KEY`                               | server only          | Bypasses RLS; leave empty unless needed      |
+| `SUPABASE_PROD_PROJECT_REF`                         | Vercel (Preview)     | Enables the production guard                 |
+| `NEXT_PUBLIC_SITE_URL`                              | local, Vercel (Prod) | Derived on Vercel if unset                   |
+| `NEXT_PUBLIC_SENTRY_DSN`                            | local, Vercel        |                                              |
+| `SENTRY_ORG`, `SENTRY_PROJECT`, `SENTRY_AUTH_TOKEN` | Vercel, CI           | Source map upload at build time              |
 
-Server Side version of the hook useAppUser
+## Not included yet
 
-```typescript
-// Example usage
-import { getServerAppUser } from '@/utils/getServerAppUser';
-
-function Profile() {
-  const user = await getServerAppUser();
-
-  return (
-    <div>
-      <h1>{user?.email}</h1>
-      <p>{user?.dbData?.name}</p>
-    </div>
-  );
-}
-```
-
-These utilities help maintain consistent authentication and user management across your application while reducing boilerplate code.
-
-# Sentry
-
-We use Sentry for error tracking and performance monitoring.
-
-## Setup
-
-1. Create account at [Sentry.io](https://sentry.io)
-2. Create a new Next.js project in Sentry
-3. Get your auth token:
-   - Go to your Account Settings
-   - Navigate to Auth Tokens
-   - Click "Create New Token"
-   - Copy the generated token
-4. Get your DSN:
-   - Go to Settings
-   - Select Projects
-   - Choose your project
-   - Navigate to SDK Setup
-   - Find and copy the DSN under "Client Keys (DSN)"
-
-Create `.env.sentry-build-plugin` file:
-```plaintext
-# DO NOT commit this file to your repository!
-SENTRY_AUTH_TOKEN=[your-auth-token]
-```
-
-Add to your `.env`:
-```plaintext
-NEXT_PUBLIC_SENTRY_DSN=[your-dsn]
-```
-
-## Vercel Deployment
-
-1. Push your code to GitHub
-2. Go to [Vercel](https://vercel.com)
-3. Import your repository
-4. Configure your environment variables:
-   - Copy all variables from your `.env`
-   - Update URLs to match your production domain
-5. Deploy!
-
-## Need Help?
-
-If you have questions or run into issues:
-
-1. Ask the AI Assistant! It's here to help
-2. Check the troubleshooting section in `ASSISTANT_SETUP_GUIDE.md`
-3. Contact the KZ team for additional support
+- **Tracing of agent sessions** (Langfuse). The harness records process steps
+  to a local file only.
+- **Password reset and OAuth providers.** The auth plumbing supports them; the
+  pages are not built.

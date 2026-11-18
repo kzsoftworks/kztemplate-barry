@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, develop]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  gates:
+    name: Gates and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # typecheck, lint and unit tests. e2e runs against the Vercel Preview
+      # (see e2e-preview.yml), so it is skipped here.
+      - run: harness/bin/verify --no-e2e
+      - run: npm run build
+
+  database:
+    name: Database (migrations, lint, RLS tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Starts only Postgres and applies supabase/migrations + seed.sql.
+      - run: npx supabase db start
+      - run: npm run db:lint
+      - run: npm run test:db

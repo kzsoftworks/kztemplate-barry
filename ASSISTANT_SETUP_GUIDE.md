@@ -1,501 +1,279 @@
-# KZ Template Barry - Interactive Setup Guide
+# Setup guide
 
-This is an interactive guide for setting up the KZ Template Barry. This guide assumes you have already cloned the template repository and are currently in the project directory. Each section contains specific instructions and prompts that an AI assistant will use to help you configure and customize the template according to your needs.
+Step-by-step setup for an app created from this template: local development,
+Supabase, Vercel with a Preview per pull request, Sentry, and the agent harness.
 
-## Guide Instructions for AI Assistant
+## For the AI assistant
 
-As an AI assistant using this guide:
+If you are an agent guiding a person through this:
 
-1. Assume the user has already cloned this template repository and is in the project directory
-2. Always attempt to automatically verify and complete steps when possible
-3. Only ask for user input when automatic verification is not possible or when user preference is required
-4. Verify prerequisites in the order listed below
-5. Provide clear instructions when manual user action is needed
+- Go one section at a time. After each, run its **Check** and confirm it passed
+  before moving on.
+- Do what can be done from the terminal yourself. Steps marked **(person)**
+  happen in a dashboard: say exactly what to click and wait for confirmation.
+- Never ask the person to paste a secret into the chat. Tell them which file or
+  dashboard field it goes in.
+- Never run `supabase db push`, and do not create paid resources without the
+  person agreeing first. Supabase Branching (section 5) is paid.
+- If a step fails, read the error and the Troubleshooting section before
+  retrying. Do not skip a check to keep going.
 
-## Template Information
+## 0. What you need
 
-- Source Repository: https://github.com/kzsoftworks/kztemplate-barry
-- Branch to Use: `main`
-- Stack: Next.js, TypeScript, Prisma, Auth0, Sentry
+| Tool       | Check             | Needed for                      | Install                             |
+| ---------- | ----------------- | ------------------------------- | ----------------------------------- |
+| Node.js    | `node -v` ≥ 22.12 | everything                      | https://nodejs.org                  |
+| git        | `git --version`   | everything                      |                                     |
+| beads      | `bd --version`    | the harness's issue tracker     | `npm i -g @beads/bd`                |
+| Docker     | `docker info`     | local Supabase, database tests  | https://docs.docker.com/get-docker/ |
+| GitHub CLI | `gh auth status`  | pull requests from the terminal | https://cli.github.com              |
 
-## Prerequisites
+Accounts: GitHub, [Supabase](https://supabase.com), [Vercel](https://vercel.com),
+[Sentry](https://sentry.io).
 
-```yaml
-prerequisites:
-  node_js:
-    required_version: 'LTS'
-    verification_command: 'node --version'
-    installation_guide: 'https://nodejs.org/'
-    validation: 'Version should be current LTS'
+## 1. Create your repository
 
-  git:
-    required_version: 'any'
-    verification_command: 'git --version'
-    installation_guide: 'https://git-scm.com/downloads'
-    validation: 'Any version is acceptable, install latest if not present'
+1. **(person)** On GitHub, open the template repository and choose
+   **Use this template → Create a new repository**.
+2. Clone it and install:
 
-  postgresql:
-    required_version: 'any'
-    verification_command: 'which psql'
-    installation_guide: 'Based on OS'
-    validation: 'PostgreSQL must be installed locally for development'
+   ```bash
+   git clone <your-repo-url> && cd <your-repo>
+   npm install
+   ```
 
-  auth0:
-    required: true
-    setup_instructions:
-      - "Create an Auth0 account at https://auth0.com/signup if you haven't already"
-      - 'Once logged in, create a new application'
-      - "Select 'Regular Web Application' type"
-      - 'Choose Next.js from the technology options'
-    required_data:
-      - AUTH0_BASE_URL: 'Your local development URL (default: http://localhost:3000)'
-      - AUTH0_CLIENT_ID: 'From Auth0 Application Settings'
-      - AUTH0_CLIENT_SECRET: 'From Auth0 Application Settings'
-      - AUTH0_SECRET: 'Same as AUTH0_CLIENT_SECRET'
-      - AUTH0_ISSUER_BASE_URL: 'https:// + Your Auth0 domain'
+**Check:** `npm run dev` serves http://localhost:3000 with a notice that
+Supabase is not configured yet. Stop it with Ctrl+C.
 
-  sentry:
-    required: true
-    verification: 'Automatic - Required for error tracking and monitoring'
-    setup_guide: 'https://sentry.io/signup/'
-    requirements:
-      account:
-        - 'Sentry.io account (free tier available)'
-        - 'Organization admin access for token creation'
-      permissions:
-        - 'project:write scope for source map uploads'
-        - 'project:read scope for error monitoring'
-      system:
-        - 'Node.js version compatible with @sentry/nextjs'
-        - 'Webpack for source map generation'
-    recommended_addons:
-      - 'Performance monitoring'
-      - 'Session replay'
-      - 'Release tracking'
+## 2. Harness
+
+```bash
+harness/bin/setup <prefix>
 ```
 
-## Interactive Setup Process
+`<prefix>` is a short name for your issues (2–12 lowercase letters or digits),
+for example `shop` gives `shop-a1b`. The script checks the tools, initialises
+beads and commits its configuration.
 
-### 1. Project Initialization
+**Check:** `bd status` prints a summary, and `harness/bin/verify --no-e2e`
+ends with `verify: OK`.
 
-```yaml
-step_id: init
-automatic_checks:
-  - node_version:
-      command: 'node --version'
-      validation: 'Compare with current LTS version'
-      action_if_failed: 'Provide Node.js LTS installation instructions'
+To run the browser gate locally, install the browser once:
+`npx playwright install chromium`.
 
-  - git_version:
-      command: 'git --version'
-      validation: 'Verify git is installed'
-      action_if_failed: 'Provide git installation instructions'
+## 3. Local Supabase
 
-  - postgresql:
-      command: 'which psql'
-      validation: 'Check if local PostgreSQL is installed'
-      action_if_failed: 'Ask user if they prefer Vercel PostgreSQL'
-
-required_input:
-  repository_setup:
-    description: 'Create a new repository for your project'
-    steps:
-      - 'Create a new empty repository on GitHub'
-      - 'Share the repository URL with the assistant'
-    note: 'Do not initialize with README, license, or .gitignore'
-
-actions:
-  pre_installation:
-    - Verify Node.js LTS version
-    - Verify git installation
-    - Check PostgreSQL availability
-
-  repository_configuration:
-    description: 'Configure git remote with the new repository'
-    input_required: 'Repository URL provided by user (e.g., https://github.com/username/repository)'
-    steps:
-      - Remove existing remote:
-          command: 'git remote remove origin'
-      - Convert HTTPS URL to SSH format:
-          example:
-            from: 'https://github.com/username/repository'
-            to: 'git@github.com:username/repository.git'
-      - Add new repository as origin:
-          command: 'git remote add origin {converted_ssh_url}'
-      - Push code to new repository:
-          command: 'git push -u origin main'
-
-  installation:
-    - Install dependencies: npm install
-    - Copy .env.example to .env
-
-validation:
-  repository:
-    - 'Git remote is correctly configured'
-    - 'Code is pushed to new repository'
-    - 'Repository URL is recorded for Vercel deployment'
-  environment:
-    - 'Current directory contains template files'
-    - 'Node modules installed'
-    - '.env file exists'
-    - 'Node.js version is LTS'
+```bash
+npm run db:start
 ```
 
-### 2. Auth0 Configuration (Required)
+The first run downloads the Docker images. When it finishes it prints the local
+URL and keys.
 
-```yaml
-step_id: auth0
-automatic_setup:
-  development_url:
-    default: 'http://localhost:3000'
-    validation: 'Must be a valid URL'
-
-setup_steps:
-  1_create_account:
-    action: 'Direct user to https://auth0.com/signup'
-    validation: 'User can log into Auth0 dashboard'
-
-  2_create_application:
-    instructions:
-      - 'Go to Applications in the left panel'
-      - "Click 'Create Application'"
-      - 'Name your application (suggest using project name)'
-      - "Select 'Regular Web Application'"
-      - 'Choose Next.js from technology options'
-
-  3_collect_credentials:
-    required_data:
-      AUTH0_BASE_URL:
-        default: 'http://localhost:3000'
-        location: 'Your local development URL'
-      AUTH0_CLIENT_ID:
-        location: 'Application Settings → Client ID'
-      AUTH0_CLIENT_SECRET:
-        location: 'Application Settings → Client Secret'
-      AUTH0_SECRET:
-        value: 'Same as AUTH0_CLIENT_SECRET'
-      AUTH0_ISSUER_BASE_URL:
-        template: 'https://{AUTH0_DOMAIN}'
-
-  4_configure_callbacks:
-    automatic: true
-    actions:
-      - 'Set Allowed Callback URLs to {AUTH0_BASE_URL}/api/auth/callback'
-      - 'Set Allowed Logout URLs to {AUTH0_BASE_URL}'
-      - 'Set Allowed Web Origins to {AUTH0_BASE_URL}'
-
-  5_enable_authentication:
-    instructions:
-      - "Go to 'Authentication → Database' in Auth0 dashboard"
-      - 'Enable Username-Password-Authentication'
-      - 'Configure required settings'
-
-validation:
-  environment_variables:
-    - 'All AUTH0_* variables are set in .env'
-    - 'URLs follow correct format'
-  application_settings:
-    - 'Callback URLs are properly configured'
-    - 'At least one authentication method is enabled'
+```bash
+cp .env.example .env.local
 ```
 
-### 3. Database Configuration
+**(person)** In `.env.local`, set `NEXT_PUBLIC_SUPABASE_URL` to the printed
+API URL and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` to the printed publishable
+key.
 
-```yaml
-step_id: database
-required_input:
-  - database_name: 'Name for your local development database'
+Then regenerate the database types once, so they match what your Supabase
+version generates, and commit the result:
 
-actions:
-    automatic_setup:
-      - check_psql: 'which psql'
-      - create_db: 'createdb [dbname]'
-    database_url_format:
-      template: 'postgres://{username}@localhost:5432/{project_name}_local'
-      example: 'postgres://username@localhost:5432/myproject_local'
-    required_data:
-      - username: 'Your PostgreSQL username'
-      - database_name: 'Name for your database (default: barry_local)'
-
-  common:
-    - Set DATABASE_URL in .env
-    - Run database migrations: npx prisma db push
-
-validation:
-  local_setup:
-    - 'PostgreSQL is installed and running (check with: pg_isready)'
-    - 'Local database is created successfully'
-    - 'Database connection string format is correct: postgres://{username}@localhost:5432/{database_name}'
-    - 'Database is accessible (try: psql -d {database_name})'
-    - 'Prisma migrations complete successfully (npx prisma db push)'
-  note: 'Production database setup will be handled during Vercel deployment'
+```bash
+npm run db:types
 ```
 
-### 4. Error Tracking Setup (Optional)
+**Check:**
 
-```yaml
-step_id: monitoring
-automatic_checks:
-  sentry_files:
-    - sentry.client.config.ts
-    - sentry.server.config.ts
-    - sentry.edge.config.ts
+- `npm run test:db` passes (RLS tests).
+- `npm run dev`, then sign up at http://localhost:3000/sign-up. You land on
+  `/profile` with your email, name and the `member` role.
+- Local emails, if you turn confirmations on, appear at http://localhost:54324.
 
-setup_steps:
-  1_create_account:
-    action: 'Direct user to https://sentry.io/signup'
-    validation: 'User can access Sentry dashboard'
+## 4. Supabase project (production)
 
-  2_create_project:
-    instructions:
-      - "Click 'Create Project' in Sentry dashboard"
-      - "Select 'Next.js' as your platform"
-      - 'Name your project (use same name as your local project)'
-      - 'Set alert preferences (optional)'
+1. **(person)** Create a project at https://supabase.com/dashboard. Choose the
+   region closest to your users and save the database password in a password
+   manager.
+2. **(person)** In **Authentication → URL Configuration**, set the Site URL to
+   your production URL (you can update it after section 6).
+3. Open `supabase/config.toml` and, in `additional_redirect_urls`, replace
+   `<vercel-team-slug>` with your Vercel team or account slug. This lets auth
+   links return to any Preview deployment. Commit the change.
+4. The first migration is applied to this project when the GitHub integration
+   is connected (section 5) and the change reaches your production branch. Do
+   not push the schema by hand.
 
-  3_collect_credentials:
-    required_data:
-      NEXT_PUBLIC_SENTRY_DSN:
-        location: 'Project Settings → Client Keys (DSN)'
-        description: 'Used to identify your project in Sentry'
-      SENTRY_AUTH_TOKEN:
-        location: 'User Settings → Auth Tokens'
-        description: 'Used for source map uploads and releases'
-        creation_steps:
-          - 'Go to User Settings (click your profile)'
-          - 'Navigate to Auth Tokens'
-          - "Create new token with 'project:write' scope"
+## 5. Supabase Branching (a database per pull request)
 
-  4_configure_project:
-    environment_setup:
-      - 'Add Sentry variables to .env file using:'
-      - 'echo "NEXT_PUBLIC_SENTRY_DSN=your_dsn\nSENTRY_AUTH_TOKEN=your_token" >> .env'
-      - 'Ensure source maps are properly configured'
-    sampling_rates:
-      development:
-        traces: 1.0
-        replays_session: 0.1
-        replays_on_error: 1.0
-      production:
-        traces: 0.1 # Adjust based on traffic
-        replays_session: 0.1
-        replays_on_error: 1.0
+Branching is a paid Supabase feature, billed for each branch while it is
+active. Confirm with whoever pays before enabling it.
 
-validation:
-  config_files:
-    - 'Verify Sentry initialization in client config'
-    - 'Verify Sentry initialization in server config'
-    - 'Verify Sentry initialization in edge config'
-  environment:
-    - 'NEXT_PUBLIC_SENTRY_DSN is set'
-    - 'SENTRY_AUTH_TOKEN is set'
-  functionality:
-    test_routes:
-      frontend:
-        - 'Visit /sentry-example-page in your browser'
-        - 'This page will trigger a test error automatically'
-      api:
-        - 'Test API error handling using:'
-        - 'curl -X POST http://localhost:3000/api/sentry-example-api'
-    verification:
-      - 'Open your Sentry dashboard'
-      - 'Verify both frontend and API errors appear'
-      - 'Check error details and source maps are working'
+1. **(person)** In the Supabase dashboard: **Project Settings → Integrations →
+   GitHub**. Authorize and choose your repository.
+2. **(person)** Set:
+   - **Supabase directory:** `supabase` (the working directory is the repo root)
+   - **Production branch:** `main`
+   - **Automatic branching:** on
+   - **Deploy to production:** on (merging to `main` applies new migrations)
+3. **(person)** In GitHub **Settings → Branches**, protect `main` and add
+   **Supabase Preview** and **CI** as required status checks.
 
-troubleshooting:
-  common_issues:
-    missing_errors:
-      - 'Check DSN is correctly set'
-      - 'Verify sampling rates'
-      - 'Check console for initialization errors'
-    source_maps:
-      - 'Verify SENTRY_AUTH_TOKEN permissions'
-      - 'Check build configuration'
+**Check:** after section 6, opening a pull request shows a comment from
+Supabase with the status of its preview branch.
+
+If you do not want Branching, skip this section: Previews then need Supabase
+variables set by hand in Vercel for the Preview environment, pointing at a
+separate non-production project shared by all pull requests. Never point them
+at production; the build guard in section 6 will stop you if you do.
+
+## 6. Vercel
+
+1. **(person)** At https://vercel.com/new, import the repository. The framework
+   is detected as Next.js. Deploy; the first deployment works without any
+   variable.
+2. **(person)** Install the Supabase integration: Vercel **Marketplace →
+   Supabase → Connect** to the project from section 4, and enable syncing
+   environment variables for **Production** and **Preview**. This sets
+   `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` for
+   production, and for every Preview the values of its own branch.
+3. **(person)** In Vercel **Settings → Environment Variables** add:
+
+   | Variable                    | Environment | Value                                                     |
+   | --------------------------- | ----------- | --------------------------------------------------------- |
+   | `SUPABASE_PROD_PROJECT_REF` | Preview     | the project ref from section 4 (the subdomain of its URL) |
+   | `NEXT_PUBLIC_SITE_URL`      | Production  | your production URL                                       |
+
+4. **(person)** For the `E2E on Preview` workflow: Vercel **Settings →
+   Deployment Protection → Protection Bypass for Automation**, create a secret,
+   and add it to GitHub as the repository secret
+   `VERCEL_AUTOMATION_BYPASS_SECRET`.
+5. **(person)** In Supabase **Authentication → URL Configuration**, set the
+   Site URL to the production URL and add
+   `https://*-<vercel-team-slug>.vercel.app/**` to the redirect URLs.
+
+**Check:** open a draft pull request with a trivial change.
+
+- GitHub shows the checks `CI`, `Supabase Preview`, `Vercel` and
+  `E2E on Preview`, all green.
+- The Vercel build log of the Preview contains a line starting with
+  `preview-binding:` with `"productionGuard":"checked"`.
+- On the Preview URL you can sign up, and the new user does **not** appear in
+  the production project's Authentication page.
+
+The very first deployment of a pull request can fail with
+`Preview deployment is missing NEXT_PUBLIC_SUPABASE_URL`: the variables are
+synced when the pull request opens and Supabase redeploys once the branch is
+ready. Wait for that redeploy.
+
+## 7. Sentry
+
+1. **(person)** Create a project at https://sentry.io with the Next.js
+   platform. Copy the DSN.
+2. **(person)** Create an auth token: **Settings → Auth Tokens**, with
+   permission to upload source maps (organization token).
+3. **(person)** Set the variables:
+
+   | Variable                 | Where                                      |
+   | ------------------------ | ------------------------------------------ |
+   | `NEXT_PUBLIC_SENTRY_DSN` | `.env.local`; Vercel (Production, Preview) |
+   | `SENTRY_ORG`             | Vercel (Production, Preview)               |
+   | `SENTRY_PROJECT`         | Vercel (Production, Preview)               |
+   | `SENTRY_AUTH_TOKEN`      | Vercel (Production, Preview), as sensitive |
+
+   Without the token the build still works; stack traces are just not
+   de-minified.
+
+**Check:** `npm run dev`, open http://localhost:3000/sentry-example-page and
+click the button. Two issues appear in Sentry within a minute, one from the
+browser and one from the server, with `environment: development`. Errors from
+Previews arrive as `preview` and from production as `production`.
+
+Once verified, delete `src/app/sentry-example-page/` and
+`src/app/api/sentry-example-api/`, and remove them from `src/lib/routes.ts`.
+
+## 8. Agent tooling (optional)
+
+`.mcp.json` declares MCP servers for Claude Code. Each one asks for approval the
+first time, and the hosted ones ask you to sign in.
+
+| Server          | Gives the agent                                   | Notes                       |
+| --------------- | ------------------------------------------------- | --------------------------- |
+| `next-devtools` | errors, routes and logs of the running dev server | needs `npm run dev`         |
+| `shadcn`        | the shadcn/ui component registry                  |                             |
+| `supabase`      | schema, docs, branches                            | defaults to the local stack |
+| `sentry`        | issues and traces                                 |                             |
+| `vercel`        | deployments and build logs                        |                             |
+
+To point the Supabase server at a hosted project, export this in your shell
+before starting Claude Code. Use a development project or a preview branch,
+keep `read_only=true`, and never use the production project:
+
+```bash
+export SUPABASE_MCP_URL="https://mcp.supabase.com/mcp?project_ref=<ref>&read_only=true&features=database,docs,branching"
+export SENTRY_MCP_URL="https://mcp.sentry.dev/mcp/<org-slug>/<project-slug>"
 ```
 
-### 5. Vercel Deployment
+## 9. Start building
 
-```yaml
-step_id: vercel_deployment
-automatic_checks:
-  required_files:
-    - 'package.json'
-    - '.env'
+In Claude Code:
 
-setup_steps:
-  1_vercel_setup:
-    description: 'Setting up Vercel deployment'
-    prerequisites:
-      - 'GitHub repository configured (from Project Initialization step)'
-      - 'Vercel account created'
-      - 'All environment variables ready'
-    note: 'The deployment will use the GitHub repository you created earlier'
+1. `/intent` and describe the product: who it is for and what they need to do.
+2. `/plan-to-beads` to turn the first feature into an epic and issues.
+3. "Work on `<issue id>`", then `/verify`, then `/ship`.
 
-  2_deployment:
-    steps:
-      - 'Login to Vercel Dashboard'
-      - 'Click "New Project"'
-      - 'Import your GitHub repository'
-      - 'Select the repository'
-      - 'Configure project:'
-        - 'Framework Preset: Next.js'
-        - 'Root Directory: ./ (default)'
-        - 'Build Command: next build (default)'
+## Checklist
 
-  3_environment_variables:
-    description: 'Configure all environment variables in Vercel'
-    auth0_setup:
-      description: 'Create new Auth0 tenant for production'
-      steps:
-        - 'Create new Auth0 tenant (e.g., {project}-production)'
-        - 'Create new Regular Web Application'
-        - 'Select Next.js as the technology'
-        - 'Collect the following credentials:'
-          - 'Domain'
-          - 'Client ID'
-          - 'Client Secret'
-          - 'Auth0 Secret (from Credentials tab)'
-      note: 'Keep the production tenant separate from your development tenant for security'
-    vercel_env_setup:
-      description: 'Set up environment variables using Vercel CLI'
-      instructions: 'For each command, first provide the value to paste, then run the command'
-      command_sequence:
-        - variable: 'AUTH0_DOMAIN'
-          command: 'vercel env add AUTH0_DOMAIN production'
-          instruction: 'When prompted, paste this value:'
-          value_template: '{auth0_domain from previous step}'
-        - variable: 'AUTH0_CLIENT_ID'
-          command: 'vercel env add AUTH0_CLIENT_ID production'
-          instruction: 'When prompted, paste this value:'
-          value_template: '{client_id from previous step}'
-        - variable: 'AUTH0_CLIENT_SECRET'
-          command: 'vercel env add AUTH0_CLIENT_SECRET production'
-          instruction: 'When prompted, paste this value:'
-          value_template: '{client_secret from previous step}'
-        - variable: 'AUTH0_SECRET'
-          command: 'vercel env add AUTH0_SECRET production'
-          instruction: 'When prompted, paste this value:'
-          value_template: '{auth0_secret from previous step}'
-        - variable: 'AUTH0_ISSUER_BASE_URL'
-          command: 'vercel env add AUTH0_ISSUER_BASE_URL production'
-          instruction: 'When prompted, paste this value:'
-          value_template: 'https://{auth0_domain}'
-        - variable: 'AUTH0_BASE_URL'
-          command: 'vercel env add AUTH0_BASE_URL production'
-          instruction: 'When prompted, paste this value:'
-          value_template: 'https://[project-name].vercel.app'
-          note: 'Use the same project name from your Vercel deployment URL. You can find this in your Vercel dashboard under the project name.'
-    auth0_url_configuration:
-      description: 'Update Auth0 application URLs'
-      vercel_url_format: |
-        After deploying to Vercel, your project will have a URL in the format:
-        https://[project-name].vercel.app
+- [ ] `harness/bin/setup <prefix>` ran; `bd status` works
+- [ ] Local sign-up works; `npm run test:db` passes
+- [ ] `src/types/database.types.ts` regenerated and committed
+- [ ] `<vercel-team-slug>` replaced in `supabase/config.toml`
+- [ ] Supabase GitHub integration connected; `Supabase Preview` is a required check
+- [ ] Vercel project deployed; Supabase integration syncing Production and Preview
+- [ ] `SUPABASE_PROD_PROJECT_REF` set for the Preview environment
+- [ ] `VERCEL_AUTOMATION_BYPASS_SECRET` set in GitHub
+- [ ] A test pull request shows all four checks green and the `preview-binding` line
+- [ ] Sentry receives the sample errors; example page deleted
+- [ ] `INTENT.md` filled in
 
-        You can find this URL in your Vercel dashboard after the initial deployment.
-        Example: https://barry.vercel.app
-      urls_to_configure:
-        callback_urls: 'https://[project-name].vercel.app/api/auth/callback'
-        logout_urls: 'https://[project-name].vercel.app'
-        web_origins: 'https://[project-name].vercel.app'
-      note: 'Replace [project-name] with your actual project name as shown in your Vercel dashboard'
-    database_setup:
-      description: 'Set up Neon database for production'
-      steps:
-        - 'Go to Vercel project dashboard'
-        - 'Click on "Storage" in sidebar'
-        - 'Select "Connect Store" and choose "Neon"'
-        - 'Follow setup process to create database'
-        - 'Copy the provided DATABASE_URL'
-      env_setup:
-        - variable: 'DATABASE_URL'
-          command: 'vercel env add DATABASE_URL production'
-          instruction: 'When prompted, paste the Neon connection string'
-          note: 'This will be your production database. Keep it separate from your development database.'
+## Troubleshooting
 
-    additional_variables:
-      sentry:
-        - 'NEXT_PUBLIC_SENTRY_DSN'
-        - 'SENTRY_AUTH_TOKEN'
+**`npm run db:start` fails.** Docker is not running, or ports 54321–54324 are
+taken. `npx supabase stop --no-backup` clears a half-started stack.
 
-  4_auth0_configuration:
-    description: 'Update Auth0 configuration for production'
-    steps:
-      - 'Go to Auth0 Dashboard'
-      - 'Update Application URIs:'
-        - 'Allowed Callback URLs: https://[your-domain]/api/auth/callback'
-        - 'Allowed Logout URLs: https://[your-domain]'
+**Sign-up says "Supabase is not configured".** `.env.local` is missing the two
+`NEXT_PUBLIC_SUPABASE_*` values, or the dev server was not restarted after
+editing it.
 
-validation:
-  deployment:
-    - 'Verify deployment completes successfully'
-    - 'Check application loads at production URL'
-    - 'Test Auth0 login flow'
-    - 'Verify Sentry error tracking'
+**Signed out at random, or a redirect loop on `/login`.** Something was added
+to `src/lib/supabase/proxy.ts` between creating the client and `getClaims()`,
+or the function returns a different response object than the one carrying the
+cookies.
 
-troubleshooting:
-  common_issues:
-    build_failures:
-      - 'Check build logs in Vercel dashboard'
-      - 'Verify all environment variables are set'
-    auth_errors:
-      - 'Verify Auth0 callback URLs match production domain'
-      - 'Check Auth0 application settings'
-    database_connection:
-      - 'Verify DATABASE_URL is correct'
-      - 'Check database access permissions'
-```
+**"permission denied for table" from the app.** The table has no grant for the
+`authenticated` role, or no policy matches. Every table needs both; see
+`supabase/migrations/` for the pattern.
 
-### 6. Development Environment
+**`Supabase Preview` check fails.** Read its comment on the pull request. Usual
+causes: a migration that cannot run in a transaction
+(`create index concurrently`), or one that depends on data that only exists in
+production.
 
-```yaml
-step_id: dev_setup
-actions:
-  - Start development server: npm run dev
-  - Open browser: http://localhost:3000
-  - Verify all components
-validation:
-  - Server starts successfully (check terminal output)
-  - Homepage loads correctly
-  - Auth0 login button appears
-  - Can log in successfully
-  - Database queries work (check profile or other data-dependent pages)
-  - Protected routes are accessible after login
-  - No console errors in browser developer tools
-```
+**Preview build fails with "points at the PRODUCTION Supabase project".**
+Working as intended. The Preview environment in Vercel has production Supabase
+variables set by hand; remove them and let the integration sync the branch
+values.
 
-## Completion Checklist
+**Confirmation email link goes to the wrong site.** The Preview URL is not in
+the redirect allow-list (sections 4 and 6), so Supabase fell back to the Site
+URL.
 
-- [ ] Project structure created
-- [ ] Dependencies installed
-- [ ] Auth0 configured (Required)
-- [ ] Environment variables set
-- [ ] Database connected and migrated
-- [ ] Error tracking set up (if chosen)
-- [ ] Development server running
+**`E2E on Preview` gets a Vercel login page.** The
+`VERCEL_AUTOMATION_BYPASS_SECRET` repository secret is missing or does not
+match the one in Vercel.
 
-## Troubleshooting Guide
-
-```yaml
-common_issues:
-  auth0_setup:
-    - Verify all Auth0 environment variables are set correctly
-    - Check callback URLs match your development URL
-    - Ensure at least one connection method is enabled
-    - Confirm application type is 'Regular Web Application'
-
-  database_connection:
-    vercel:
-      - Verify POSTGRES_PRISMA_URL format
-      - Check Vercel project settings
-    local:
-      - Confirm PostgreSQL is running
-      - Check database user permissions
-      - Verify connection string format
-
-  development_server:
-    - Auth0 configuration issues
-    - Database connection errors
-    - Missing environment variables
-```
-
-Note: This guide is designed to be used with an AI assistant that will help you through each step, asking for necessary information and providing guidance based on your specific needs and responses.
+**No events in Sentry.** `NEXT_PUBLIC_SENTRY_DSN` is unset in that environment,
+or an ad blocker is active and the `/monitoring` tunnel path was removed from
+the proxy matcher in `src/proxy.ts`.

@@ -1,0 +1,36 @@
+'use client';
+
+import * as Sentry from '@sentry/nextjs';
+import { useEffect } from 'react';
+
+// Replaces the root layout when it throws, so it renders its own <html>.
+export default function GlobalError({
+  error,
+  reset
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
+
+  return (
+    <html lang="en">
+      <body
+        style={{
+          fontFamily: 'system-ui, sans-serif',
+          margin: '4rem auto',
+          maxWidth: '32rem',
+          padding: '0 1rem'
+        }}
+      >
+        <h1>Something went wrong</h1>
+        <p>The error has been reported. You can try again.</p>
+        <button type="button" onClick={reset}>
+          Try again
+        </button>
+      </body>
+    </html>
+  );
+}
