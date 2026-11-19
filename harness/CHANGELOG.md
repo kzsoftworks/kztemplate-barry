@@ -17,6 +17,18 @@ The harness improves in phases, each with an entry condition:
    `harness/evals/`: propose, re-run the evals in a worktree, open a pull
    request only if it improves without regressions. Never merged automatically.
 
+## v0.2 - 2026-11-19
+
+- **`/setup` skill.** Setup was a guide in prose with every cloud step done by
+  hand in a dashboard. The skill drives the Supabase, Vercel, Sentry and
+  GitHub CLIs instead; two authorizations in the Supabase dashboard stay
+  manual. Requested by the template owner; no issue, beads is not initialised
+  in the template itself. Not yet run against real accounts.
+- `harness/bin/setup` now requires Docker, `gh` and `vercel`: the template is
+  opinionated and setup needs all of them.
+- `sentry` (the Sentry CLI) is a direct dev dependency, so `npx sentry` does
+  not depend on a transitive install.
+
 ## v0.1 - 2026-11-18
 
 Initial harness for the Next.js + Supabase + Sentry + Vercel template,

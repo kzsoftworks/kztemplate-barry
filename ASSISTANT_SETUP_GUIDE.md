@@ -1,226 +1,85 @@
 # Setup guide
 
-Step-by-step setup for an app created from this template: local development,
-Supabase, Vercel with a Preview per pull request, Sentry, and the agent harness.
+Setup for an app created from this template: local development, Supabase with
+a database per pull request, Vercel with a Preview per pull request, Sentry,
+and the agent harness.
 
-The template is opinionated: every section is required and they are done in
-order. Setup is finished when the checklist at the end is complete.
+The template is opinionated: every part is required. Setup is finished when the
+checklist at the end is complete.
+
+## How it works
+
+Open the repository in Claude Code and run **`/setup`**. The agent runs every
+step with the service CLIs (`supabase`, `vercel`, `sentry`, `gh`) and checks
+each one before moving on. The commands are in
+[`.claude/skills/setup/SKILL.md`](./.claude/skills/setup/SKILL.md); this guide
+says what happens and what is left to you.
 
 ## For the AI assistant
 
-If you are an agent guiding a person through this:
+Load the `setup` skill and follow it. In short: one step at a time with its
+check, look before creating, secrets go from one command into the next and
+never into the conversation, ask before anything paid or public, and never run
+`supabase db push`. Do not offer alternatives to the stack.
 
-- Go one section at a time. After each, run its **Check** and confirm it passed
-  before moving on.
-- Do what can be done from the terminal yourself. Steps marked **(person)**
-  happen in a dashboard: say exactly what to click and wait for confirmation.
-- Never ask the person to paste a secret into the chat. Tell them which file or
-  dashboard field it goes in.
-- Never run `supabase db push`, and do not create paid resources without the
-  person agreeing first. Supabase Branching (section 5) is paid.
-- If a step fails, read the error and the Troubleshooting section before
-  retrying. Do not skip a check to keep going.
-- Do not offer alternatives to the stack or leave a section out. If the person
-  wants a different service, say that this template does not cover it.
+## What you need
 
-## 0. What you need
+| Tool       | Check             | Install                             |
+| ---------- | ----------------- | ----------------------------------- |
+| Node.js    | `node -v` ≥ 22.12 | https://nodejs.org                  |
+| git        | `git --version`   |                                     |
+| Docker     | `docker info`     | https://docs.docker.com/get-docker/ |
+| GitHub CLI | `gh --version`    | https://cli.github.com              |
+| Vercel CLI | `vercel -v`       | `npm i -g vercel`                   |
+| beads      | `bd --version`    | `npm i -g @beads/bd`                |
 
-| Tool       | Check             | Needed for                      | Install                             |
-| ---------- | ----------------- | ------------------------------- | ----------------------------------- |
-| Node.js    | `node -v` ≥ 22.12 | everything                      | https://nodejs.org                  |
-| git        | `git --version`   | everything                      |                                     |
-| beads      | `bd --version`    | the harness's issue tracker     | `npm i -g @beads/bd`                |
-| Docker     | `docker info`     | local Supabase, database tests  | https://docs.docker.com/get-docker/ |
-| GitHub CLI | `gh auth status`  | pull requests from the terminal | https://cli.github.com              |
+The Supabase and Sentry CLIs are installed by `npm install` (`npx supabase`,
+`npx sentry`).
 
-Accounts: GitHub, [Supabase](https://supabase.com), [Vercel](https://vercel.com),
-[Sentry](https://sentry.io).
+Accounts: GitHub, [Supabase](https://supabase.com), [Vercel](https://vercel.com)
+and [Sentry](https://sentry.io). Supabase Branching is a paid feature, billed
+for each branch while it is active.
 
-## 1. Create your repository
+Create your repository from the template on GitHub (**Use this template →
+Create a new repository**), clone it, and start Claude Code in it.
 
-1. **(person)** On GitHub, open the template repository and choose
-   **Use this template → Create a new repository**.
-2. Clone it and install:
+## What the agent does
 
-   ```bash
-   git clone <your-repo-url> && cd <your-repo>
-   npm install
-   ```
+| Step                 | Result                                                                                     |
+| -------------------- | ------------------------------------------------------------------------------------------ |
+| Harness, local stack | beads initialised, local Supabase running, `.env.local`, types regenerated, gates passing  |
+| Sentry               | project created, DSN in `.env.local` and Vercel                                            |
+| Supabase             | project created and linked, Auth URLs set from `supabase/config.toml`                      |
+| Vercel               | project created, connected to the repository, variables set, Sentry token stored as secret |
+| GitHub               | bypass secret for `E2E on Preview`, `main` protected with the required checks              |
+| Proof                | a draft pull request with all checks green, then closed                                    |
 
-**Check:** `npm run dev` serves http://localhost:3000 with a notice that
-Supabase is not configured yet. Stop it with Ctrl+C.
+## What you do
 
-## 2. Harness
+1. **Log in** to each CLI when asked (`gh auth login`, `npx supabase login`,
+   `vercel login`, `npx sentry auth login`). Each opens a browser.
+2. **Decide** once: app name, issue prefix, Supabase organisation and region,
+   Vercel team, Sentry organisation, production domain.
+3. **Approve** what costs money or is public: creating the Supabase project,
+   Branching, the push to `main`, branch protection.
+4. **Authorize two integrations** in the Supabase dashboard, at
+   **Project Settings → Integrations**. The agent gives you the link and waits.
+   - **GitHub**: choose the repository; Supabase directory `supabase`;
+     production branch `main`; automatic branching on; deploy to production on.
+     This is what gives each pull request its own database.
+   - **Vercel**: connect the Vercel project and enable environment variable
+     sync for **Production** and **Preview**. This is what points each Preview
+     at its own branch.
+5. **Approve the MCP servers** the first time Claude Code asks (`next-devtools`,
+   `shadcn`, `supabase`, `sentry`, `vercel`), and add the two `export` lines
+   the agent gives you to your shell profile.
 
-```bash
-harness/bin/setup <prefix>
-```
+Never paste a secret into the chat. The agent does not need one from you.
 
-`<prefix>` is a short name for your issues (2–12 lowercase letters or digits),
-for example `shop` gives `shop-a1b`. The script checks the tools, initialises
-beads and commits its configuration.
+## After setup
 
-**Check:** `bd status` prints a summary, and `harness/bin/verify --no-e2e`
-ends with `verify: OK`.
-
-To run the browser gate locally, install the browser once:
-`npx playwright install chromium`.
-
-## 3. Local Supabase
-
-```bash
-npm run db:start
-```
-
-The first run downloads the Docker images. When it finishes it prints the local
-URL and keys.
-
-```bash
-cp .env.example .env.local
-```
-
-**(person)** In `.env.local`, set `NEXT_PUBLIC_SUPABASE_URL` to the printed
-API URL and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` to the printed publishable
-key.
-
-Then regenerate the database types once, so they match what your Supabase
-version generates, and commit the result:
-
-```bash
-npm run db:types
-```
-
-**Check:**
-
-- `npm run test:db` passes (RLS tests).
-- `npm run dev`, then sign up at http://localhost:3000/sign-up. You land on
-  `/profile` with your email, name and the `member` role.
-- Local emails, if you turn confirmations on, appear at http://localhost:54324.
-
-## 4. Supabase project (production)
-
-1. **(person)** Create a project at https://supabase.com/dashboard. Choose the
-   region closest to your users and save the database password in a password
-   manager.
-2. **(person)** In **Authentication → URL Configuration**, set the Site URL to
-   your production URL (you can update it after section 6).
-3. Open `supabase/config.toml` and, in `additional_redirect_urls`, replace
-   `<vercel-team-slug>` with your Vercel team or account slug. This lets auth
-   links return to any Preview deployment. Commit the change.
-4. The first migration is applied to this project when the GitHub integration
-   is connected (section 5) and the change reaches your production branch. Do
-   not push the schema by hand.
-
-## 5. Supabase Branching (a database per pull request)
-
-Branching is required: it is what gives each pull request its own database. It
-is a paid Supabase feature, billed for each branch while it is active, so
-confirm with whoever pays before enabling it.
-
-1. **(person)** In the Supabase dashboard: **Project Settings → Integrations →
-   GitHub**. Authorize and choose your repository.
-2. **(person)** Set:
-   - **Supabase directory:** `supabase` (the working directory is the repo root)
-   - **Production branch:** `main`
-   - **Automatic branching:** on
-   - **Deploy to production:** on (merging to `main` applies new migrations)
-3. **(person)** In GitHub **Settings → Branches**, protect `main` and add
-   **Supabase Preview** and **CI** as required status checks.
-
-**Check:** after section 6, opening a pull request shows a comment from
-Supabase with the status of its preview branch.
-
-## 6. Vercel
-
-1. **(person)** At https://vercel.com/new, import the repository. The framework
-   is detected as Next.js. Deploy; the first deployment works without any
-   variable.
-2. **(person)** Install the Supabase integration: Vercel **Marketplace →
-   Supabase → Connect** to the project from section 4, and enable syncing
-   environment variables for **Production** and **Preview**. This sets
-   `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` for
-   production, and for every Preview the values of its own branch.
-3. **(person)** In Vercel **Settings → Environment Variables** add:
-
-   | Variable                    | Environment | Value                                                     |
-   | --------------------------- | ----------- | --------------------------------------------------------- |
-   | `SUPABASE_PROD_PROJECT_REF` | Preview     | the project ref from section 4 (the subdomain of its URL) |
-   | `NEXT_PUBLIC_SITE_URL`      | Production  | your production URL                                       |
-
-4. **(person)** For the `E2E on Preview` workflow: Vercel **Settings →
-   Deployment Protection → Protection Bypass for Automation**, create a secret,
-   and add it to GitHub as the repository secret
-   `VERCEL_AUTOMATION_BYPASS_SECRET`.
-5. **(person)** In Supabase **Authentication → URL Configuration**, set the
-   Site URL to the production URL and add
-   `https://*-<vercel-team-slug>.vercel.app/**` to the redirect URLs.
-
-**Check:** open a draft pull request with a trivial change.
-
-- GitHub shows the checks `CI`, `Supabase Preview`, `Vercel` and
-  `E2E on Preview`, all green.
-- The Vercel build log of the Preview contains a line starting with
-  `preview-binding:` with `"productionGuard":"checked"`.
-- On the Preview URL you can sign up, and the new user does **not** appear in
-  the production project's Authentication page.
-
-The very first deployment of a pull request can fail with
-`Preview deployment is missing NEXT_PUBLIC_SUPABASE_URL`: the variables are
-synced when the pull request opens and Supabase redeploys once the branch is
-ready. Wait for that redeploy.
-
-## 7. Sentry
-
-1. **(person)** Create a project at https://sentry.io with the Next.js
-   platform. Copy the DSN.
-2. **(person)** Create an auth token: **Settings → Auth Tokens**, with
-   permission to upload source maps (organization token).
-3. **(person)** Set the variables:
-
-   | Variable                 | Where                                      |
-   | ------------------------ | ------------------------------------------ |
-   | `NEXT_PUBLIC_SENTRY_DSN` | `.env.local`; Vercel (Production, Preview) |
-   | `SENTRY_ORG`             | Vercel (Production, Preview)               |
-   | `SENTRY_PROJECT`         | Vercel (Production, Preview)               |
-   | `SENTRY_AUTH_TOKEN`      | Vercel (Production, Preview), as sensitive |
-
-   All four are required. The token is what uploads source maps, so stack
-   traces in Sentry point at your code.
-
-**Check:** `npm run dev`, open http://localhost:3000/sentry-example-page and
-click the button. Two issues appear in Sentry within a minute, one from the
-browser and one from the server, with `environment: development`. Errors from
-Previews arrive as `preview` and from production as `production`.
-
-Once verified, delete `src/app/sentry-example-page/` and
-`src/app/api/sentry-example-api/`, and remove them from `src/lib/routes.ts`.
-
-## 8. Agent tooling
-
-`.mcp.json` declares MCP servers for Claude Code. Each one asks for approval the
-first time, and the hosted ones ask you to sign in.
-
-| Server          | Gives the agent                                   | Notes                       |
-| --------------- | ------------------------------------------------- | --------------------------- |
-| `next-devtools` | errors, routes and logs of the running dev server | needs `npm run dev`         |
-| `shadcn`        | the shadcn/ui component registry                  |                             |
-| `supabase`      | schema, docs, branches                            | defaults to the local stack |
-| `sentry`        | issues and traces                                 |                             |
-| `vercel`        | deployments and build logs                        |                             |
-
-Approve all five. The Supabase server points at the local stack by default. To
-point it at a hosted project, and to scope Sentry to your project, export these
-in your shell before starting Claude Code. For Supabase use a preview branch,
-keep `read_only=true`, and never use the production project:
-
-```bash
-export SUPABASE_MCP_URL="https://mcp.supabase.com/mcp?project_ref=<ref>&read_only=true&features=database,docs,branching"
-export SENTRY_MCP_URL="https://mcp.sentry.dev/mcp/<org-slug>/<project-slug>"
-```
-
-## 9. Start building
-
-In Claude Code:
+Delete `src/app/sentry-example-page/` and `src/app/api/sentry-example-api/`,
+and remove them from `src/lib/routes.ts`. Then, in Claude Code:
 
 1. `/intent` and describe the product: who it is for and what they need to do.
 2. `/plan-to-beads` to turn the first feature into an epic and issues.
@@ -228,15 +87,16 @@ In Claude Code:
 
 ## Checklist
 
+- [ ] All CLIs installed and logged in
 - [ ] `harness/bin/setup <prefix>` ran; `bd status` works
 - [ ] Local sign-up works; `npm run test:db` passes
 - [ ] `src/types/database.types.ts` regenerated and committed
-- [ ] `<vercel-team-slug>` replaced in `supabase/config.toml`
-- [ ] Supabase GitHub integration connected; `Supabase Preview` is a required check
+- [ ] `site_url` and `<vercel-team-slug>` set in `supabase/config.toml` and pushed
+- [ ] Supabase GitHub integration connected; `main` protected with the three required checks
 - [ ] Vercel project deployed; Supabase integration syncing Production and Preview
 - [ ] `SUPABASE_PROD_PROJECT_REF` set for the Preview environment
 - [ ] `VERCEL_AUTOMATION_BYPASS_SECRET` set in GitHub
-- [ ] A test pull request shows all four checks green and the `preview-binding` line
+- [ ] A test pull request shows all checks green and the `preview-binding` line
 - [ ] Sentry receives the sample errors; example page deleted
 - [ ] MCP servers approved in Claude Code
 - [ ] `INTENT.md` filled in
@@ -270,8 +130,8 @@ variables set by hand; remove them and let the integration sync the branch
 values.
 
 **Confirmation email link goes to the wrong site.** The Preview URL is not in
-the redirect allow-list (sections 4 and 6), so Supabase fell back to the Site
-URL.
+the redirect allow-list (`additional_redirect_urls` in `supabase/config.toml`),
+so Supabase fell back to the Site URL.
 
 **`E2E on Preview` gets a Vercel login page.** The
 `VERCEL_AUTOMATION_BYPASS_SECRET` repository secret is missing or does not

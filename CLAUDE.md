@@ -56,6 +56,9 @@ Rules of the process:
   reviewer approved it. A skipped gate is reported as skipped, never as passed.
 - Do not push, open a pull request or merge unless asked. Never merge yourself.
 
+A new app starts with `/setup`, once: it creates and connects the Supabase,
+Vercel and Sentry projects with their CLIs.
+
 ## Commands
 
 ```bash

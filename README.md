@@ -14,18 +14,19 @@ and the repo carries the process the agents follow.
 
 This template is opinionated. The stack, the services and the process are
 fixed, and there is one way to set it up:
-[`ASSISTANT_SETUP_GUIDE.md`](./ASSISTANT_SETUP_GUIDE.md), every section, in
-order. An app is set up when its checklist is complete: local Supabase, the
+[`ASSISTANT_SETUP_GUIDE.md`](./ASSISTANT_SETUP_GUIDE.md), all of it. An app is set up when its checklist is complete: local Supabase, the
 harness, a Supabase project with Branching, Vercel with a Preview per pull
 request, and Sentry.
 
-Requirements: Node.js 22.12+, git, Docker, the GitHub CLI and
-[beads](https://github.com/gastownhall/beads) (`npm i -g @beads/bd`), plus
-GitHub, Supabase, Vercel and Sentry accounts.
+Requirements: Node.js 22.12+, git, Docker, the GitHub CLI, the Vercel CLI
+(`npm i -g vercel`) and [beads](https://github.com/gastownhall/beads)
+(`npm i -g @beads/bd`), plus GitHub, Supabase, Vercel and Sentry accounts.
 
-Create your repository from the template, open it in Claude Code and say:
-
-> Help me set up this template. Follow ASSISTANT_SETUP_GUIDE.md.
+Create your repository from the template, open it in Claude Code and run
+`/setup`. The agent creates and connects the Supabase, Vercel and Sentry
+projects with their CLIs, sets the variables and secrets, protects `main` and
+proves the result with a test pull request. You log in to each service,
+approve what costs money, and do two authorizations in the Supabase dashboard.
 
 If you want a different auth provider, database or host, this is the wrong
 starting point.

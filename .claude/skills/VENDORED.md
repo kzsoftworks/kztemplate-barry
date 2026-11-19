@@ -8,6 +8,7 @@ review like any other code.
 
 | Skill                  | Purpose                                                    |
 | ---------------------- | ---------------------------------------------------------- |
+| `setup`                | Sets up a new app end to end with the service CLIs         |
 | `intent`               | Process step 1: keep `INTENT.md` current                   |
 | `plan-to-beads`        | Process step 2: epic + issues in beads                     |
 | `verify`               | Gates and review loop                                      |

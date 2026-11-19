@@ -3,7 +3,7 @@
 #
 #   harness/bin/setup <issue-prefix>
 #
-# Checks the tools the harness needs and initialises beads (the issue tracker
+# Checks the tools the template needs and initialises beads (the issue tracker
 # that holds the work) with your prefix, e.g. `harness/bin/setup shop` gives
 # issues named shop-a1b, shop-a1b.1, ...
 #
@@ -27,24 +27,22 @@ if ! printf '%s' "$prefix" | grep -Eq '^[a-z][a-z0-9]{1,11}$'; then
 fi
 
 ok=1
-check() { # name, install hint, required(1/0)
+check() { # name, install hint
   if command -v "$1" >/dev/null 2>&1; then
     printf '  ✓ %s\n' "$1"
-  elif [ "$3" -eq 1 ]; then
+  else
     printf '  ✖ %s missing: %s\n' "$1" "$2"
     ok=0
-  else
-    printf '  – %s not found (optional): %s\n' "$1" "$2"
   fi
 }
 
 echo "Tools:"
-check node "install Node.js 22.12 or newer" 1
-check git "install git" 1
-check bd "npm i -g @beads/bd" 1
-check docker "needed for the local Supabase stack (npm run db:start)" 0
-check gh "needed to open pull requests from the terminal" 0
-check vercel "npm i -g vercel (optional: the Git integration deploys by itself)" 0
+check node "install Node.js 22.12 or newer"
+check git "install git"
+check bd "npm i -g @beads/bd"
+check docker "https://docs.docker.com/get-docker/ (local Supabase, database tests)"
+check gh "https://cli.github.com (pull requests, secrets, branch protection)"
+check vercel "npm i -g vercel (project, variables)"
 
 if [ "$ok" -ne 1 ]; then
   echo "setup: install the missing tools and run this again." >&2
@@ -65,9 +63,9 @@ cat <<EOF
 
 Harness ready.
 
-  1. Copy .env.example to .env.local and fill it in (ASSISTANT_SETUP_GUIDE.md).
-  2. Open Claude Code in this folder and run /intent to describe the product.
-  3. Then /plan-to-beads to turn the first feature into an epic and issues.
+Next: open Claude Code in this folder and run /setup. It creates the Supabase,
+Vercel and Sentry projects and wires them together. The Supabase and Sentry
+CLIs come with npm install (npx supabase, npx sentry).
 
 Check the gates any time with: harness/bin/verify
 EOF
