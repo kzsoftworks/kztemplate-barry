@@ -53,7 +53,7 @@ Build, verify and review repeat until the reviewer approves.
 | `POLICY.md`       | The rules a change must meet to be approved                            |
 | `.claude/skills/` | Process skills and stack skills ([list](./.claude/skills/VENDORED.md)) |
 | `.claude/agents/` | The `reviewer` subagent                                                |
-| `harness/`        | `verify`, `lf-score`, `setup`, the harness changelog and evals         |
+| `harness/`        | `verify`, `lf-score`, `setup`, `env-set`, the changelog and evals      |
 | `.beads/`         | The work: epics, issues, dependencies, notes (created by setup)        |
 | `.harness/`       | Local event log of every process step (not committed)                  |
 

@@ -33,6 +33,7 @@
       "Bash(npm run db:types)",
       "Bash(harness/bin/verify:*)",
       "Bash(harness/bin/lf-score:*)",
+      "Bash(harness/bin/env-set:*)",
       "Bash(bd:*)",
       "Bash(npx supabase migration new:*)",
       "Bash(npx supabase status)",

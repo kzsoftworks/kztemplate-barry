@@ -39,6 +39,10 @@ not exist until step 2. Its commits still go through `/verify`.
 - The CLIs detect agents: they print JSON, and the Supabase CLI refuses any
   hosted change without `--yes`. Add `--yes` only after the person approved
   that change. Keep stderr out of pipes (`2>/dev/null`).
+- **`.env.local` is written with `harness/bin/env-set KEY=value ...`**, never
+  with an editor or `sed`: the repository denies agents reading `.env` files,
+  and that also blocks editing them. The script keeps the other lines and
+  prints names only.
 - CLI flags change. If a command below is rejected, read `<command> --help`
   and adapt; do not guess a second time.
 
@@ -82,7 +86,7 @@ Then check the two things that otherwise stop setup much later:
 git config user.email
 gh api user/emails -q '.[].email'          # needs the user:email scope
 gh api -X GET search/commits -f q="author-email:$(git config user.email)" \
-  -q '.items[0].author.login'              # fallback: a login proves the match
+  -q '.items[0].author.login // "NOT MATCHED"'   # fallback: a login proves the match
 
 # 2. Branch protection: 404 "Branch not protected" means it is available;
 #    403 "Upgrade to GitHub Pro" means this repository cannot have it.
@@ -91,6 +95,7 @@ gh api repos/{owner}/{repo}/branches/main/protection
 
 For 1: an address ending in `@users.noreply.github.com` is fine. Otherwise it
 must appear in the first list, or the search must return the person's login.
+`NOT MATCHED` or an empty answer means GitHub knows no account for that email.
 If neither can show it, stop and let the person choose: add and verify the
 email at github.com/settings/emails (fixes existing commits too), or set
 `git config --local user.email` to their GitHub noreply address (fixes new
@@ -141,22 +146,33 @@ npm run db:start
 
 `bd init` (run by the setup script) commits `.beads/` by itself.
 
-Write `.env.local` from `.env.example`, with `NEXT_PUBLIC_SUPABASE_URL` and
-`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` taken from `npx supabase status -o env`
-(local keys are not secrets). Then:
+Create `.env.local` with the local URL and publishable key, taken from
+`npx supabase status -o env` (local keys are not secrets):
 
 ```bash
+harness/bin/env-set NEXT_PUBLIC_SUPABASE_URL=<API_URL> \
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<PUBLISHABLE_KEY>
 npm run db:types
 npm run test:db
 harness/bin/verify --db
 ```
 
-The local stack needs about 2 GB of free memory.
+Then prove sign-up works. Start `npm run dev` in the background, wait until
+http://localhost:3000 answers, and run:
 
-**Check:** `verify: OK` with all five gates passing; a sign-up at
-http://localhost:3000/sign-up (with `npm run dev`) lands on `/profile` with
-the `member` role; and `git diff --stat` shows at most
-`src/types/database.types.ts`. Commit that file if it changed.
+```bash
+node scripts/check-signup.mjs          # OK = landed on /profile with role member
+npm run db:reset                       # remove the test user from the local database
+```
+
+Stop the dev server by the process listening on port 3000
+(`ss -ltnp | grep :3000` shows its pid; killing `npm` leaves it running). Do
+not use `pkill -f "next dev"`: that pattern also matches the shell running it. The local stack needs about 2 GB of
+free memory; stop it with `npm run db:stop` when the step is done.
+
+**Check:** `verify: OK` with all five gates passing; `check-signup: OK`; and
+`git diff --stat` shows at most `src/types/database.types.ts`. Commit that
+file if it changed.
 
 ## 3. Sentry
 
@@ -166,8 +182,9 @@ npx sentry project create <org>/<app>:javascript-nextjs --json
 npx sentry dsn list <org>/<app> --json --fields dsn
 ```
 
-The DSN is public. Put it in `.env.local` as `NEXT_PUBLIC_SENTRY_DSN`. The
-auth token is created in step 5, straight into Vercel.
+The DSN is public. Store it with
+`harness/bin/env-set NEXT_PUBLIC_SENTRY_DSN=<dsn>`. The auth token is created
+in step 5, straight into Vercel.
 
 **Check:** `npx sentry project view <org>/<app>` shows the project.
 
@@ -204,7 +221,10 @@ to production and to every preview branch, so:
 
   [remotes.production.auth.email]
   enable_confirmations = true
+  max_frequency = "1m0s"
   ```
+
+  Look for an existing block with `grep -n '^\[remotes.production\]'`.
 
 ```bash
 npx supabase config validate
@@ -212,8 +232,10 @@ npx supabase config diff
 ```
 
 `config diff` lists **every** setting where the file and the new project
-differ (OTP length, MFA, and so on), not only the URLs. Show the person the
-whole list and say that pushing applies all of it. After they agree:
+differ, not only the URLs (its two human lines go to stderr). Show the person
+the whole list and say that pushing applies all of it, the `auth` **and**
+`storage` sections: the file turns `storage.analytics` off. Only `db.pooler`
+is left alone. After they agree:
 
 ```bash
 npx supabase config push --yes
@@ -224,10 +246,13 @@ service, which is rate-limited to a few per hour. Tell the person a custom
 SMTP provider is needed before real users sign up.
 
 **Check:** `npx supabase config diff` reports no differences under `auth`.
-Differences under `db.pooler` and `storage` remain: `config push` does not
-manage them. That is expected.
+Differences under `db.pooler`, `storage.vector` and
+`storage.image_transformation` remain after the push. That is expected.
 
 ## 5. Vercel
+
+Ask once for this step: it creates a project, changes one of its settings and
+stores six variables, one of them a new Sentry token. No cost.
 
 ```bash
 vercel project list --scope <team>                 # reuse if <app> exists
@@ -276,7 +301,7 @@ Do not add the `NEXT_PUBLIC_SUPABASE_*` variables by hand: the integration in
 step 6 owns them.
 
 **Check:** `vercel env list` shows the six variables in the right
-environments, and `vercel api /v9/projects/<project-id> --raw` shows
+environments (it shows names, not values), and `vercel api /v9/projects/<project-id> --raw` shows
 `"createDeployments":"enabled"`.
 
 ## 6. The browser steps (person)
@@ -310,7 +335,11 @@ The integration adds about fifteen variables, not two: among them
 - `npx supabase branches list` shows `main` bound to the git branch `main`.
 - `vercel env list` shows `NEXT_PUBLIC_SUPABASE_URL` and
   `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` for production.
-- "Supabase changes only" cannot be read from a CLI. Step 8 proves it.
+- The integration variables show for Production only at this point; the
+  Preview ones appear per branch when a pull request opens.
+- "Supabase changes only" cannot be read from a CLI. Ask the person to look
+  at the saved integration once more and confirm it shows off: it is the
+  setting most often left on. Step 8 proves it.
 
 ## 7. GitHub
 
@@ -331,10 +360,12 @@ commit them and, after the person agrees, push to `main`. That push applies
 the first migration to production and makes the first Production deployment.
 
 ```bash
-gh run list --branch main --limit 3
-npx supabase migration list --remote       # the migration is applied
-vercel list --prod                         # the deployment is Ready, not Blocked
+gh run list --branch main --commit "$(git rev-parse HEAD)"   # empty for a few seconds
+npx supabase migration list --remote         # the migration is applied (about 2 minutes)
+vercel list --environment production         # the deployment is Ready, not Blocked
 ```
+
+On `main` the `E2E on Preview` run is skipped: it only tests Previews.
 
 Then protect `main`, if step 0 found it available (ask first). The required
 checks are the job names:
@@ -364,13 +395,21 @@ or is reported as not available.
 ## 8. Prove it with a pull request
 
 Create a branch whose only change is outside `supabase/` (that is what proves
-"Supabase changes only" is off), push it and open a **draft** pull request.
-Then follow the `preview-deploy` skill.
+"Supabase changes only" is off). Ask first: an open pull request is a billed
+Supabase branch. Then push it, open a **draft** pull request and follow the
+`preview-deploy` skill.
 
 Supabase decides whether a pull request gets a branch when it is **opened**.
-If `Supabase Preview` says the pull request was ignored, the option in 6A is
-still on: have the person turn it off, then close the pull request and open a
-new one. Pushing more commits to the ignored one does not help.
+If `Supabase Preview` shows as `skipping` in `gh pr checks`, or its comment
+says the pull request was ignored, the option in 6A is still on. `--watch`
+does not flag it: a skipped check is not a failure. Have the person turn the
+option off, then close the pull request and open a new one. Pushing more
+commits to the ignored one does not help.
+
+Do not get the checks green by adding a change under `supabase/` to the test
+pull request, even if asked to "just make it trigger": that proves nothing,
+and every later pull request without a database change will fail its Preview
+build. If the person will not turn the option off, report the item as failed.
 
 Setup is done only when, for that pull request:
 
@@ -380,15 +419,31 @@ Setup is done only when, for that pull request:
 - the Vercel build log has a `preview-binding:` line with
   `"productionGuard":"checked"`;
 - a user created on the Preview does **not** exist in production;
-- `/sentry-example-page` on the Preview produces an issue in Sentry with
-  `environment: preview` (`npx sentry issue list <org>/<app>`).
+- `/sentry-example-page` on the Preview produces an issue in Sentry tagged
+  `preview`, and none tagged `production`:
+  `npx sentry issue list <org>/<app> --query "environment:preview"`.
 
-The Preview is behind deployment protection. To reach it, read the bypass
-secret from the Vercel project API into a shell variable inside one command
-and send it as the `x-vercel-protection-bypass` header; never print it. To
-show a user is not in production, sign in with the same credentials against
-each project's Auth API using its publishable key: the preview branch accepts
-them and production answers `invalid_credentials`.
+The Preview is behind deployment protection. Read the bypass secret into a
+variable and use it inside the same command; never print it. This signs a
+user up on the Preview:
+
+```bash
+export VERCEL_AUTOMATION_BYPASS_SECRET="$(vercel api /v9/projects/<project-id> --raw --scope <team> 2>/dev/null \
+  | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(Object.keys(JSON.parse(s).protectionBypass)[0]))')"
+CHECK_EMAIL=<email> CHECK_PASSWORD=<password> node scripts/check-signup.mjs <preview-url>
+```
+
+To show that user is not in production, sign in with the same credentials
+against each project's Auth API (`POST /auth/v1/token?grant_type=password`,
+header `apikey`) using its publishable key: the preview branch accepts them
+and production answers `invalid_credentials`. The preview branch's ref is
+`project_ref` in `npx supabase branches list`. Publishable keys are public,
+but the same response lists secret keys, so select inside the command:
+
+```bash
+npx supabase projects api-keys --remote=<ref> --output-format json 2>/dev/null \
+  | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const j=JSON.parse(s);console.log((j.keys??j).find(k=>k.type==="publishable").api_key)})'
+```
 
 The first deployment of a pull request can fail with
 `Preview deployment is missing NEXT_PUBLIC_SUPABASE_URL` while the Supabase

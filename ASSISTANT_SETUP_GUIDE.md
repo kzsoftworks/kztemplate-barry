@@ -130,8 +130,8 @@ author".** The commit was made with an email that is not on your GitHub
 account. Add and verify it at github.com/settings/emails, or commit with your
 GitHub noreply address.
 
-**`Supabase Preview` says the pull request was ignored.** "Supabase changes
-only" is on in the GitHub integration. Turn it off, then close the pull request
+**`Supabase Preview` is skipped, or says the pull request was ignored.**
+"Supabase changes only" is on in the GitHub integration. Turn it off, then close the pull request
 and open a new one: Supabase decides when the pull request is opened.
 
 **`E2E on Preview` never runs.** The Vercel project does not report

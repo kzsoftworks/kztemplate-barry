@@ -20,7 +20,7 @@
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
     "db:lint": "supabase db lint --fail-on error",
-    "db:types": "supabase gen types typescript --local > src/types/database.types.ts",
+    "db:types": "supabase gen types typescript > src/types/database.types.ts",
     "test:db": "supabase test db",
     "check:preview-binding": "node scripts/verify-preview-binding.mjs",
     "verify": "harness/bin/verify"

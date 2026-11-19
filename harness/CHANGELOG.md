@@ -17,6 +17,34 @@ The harness improves in phases, each with an entry condition:
    `harness/evals/`: propose, re-run the evals in a worktree, open a pull
    request only if it improves without regressions. Never merged automatically.
 
+## v0.4 - 2026-11-19
+
+`/setup` was run a second time, on a machine with Docker, and reached the end:
+local stack with five gates, production migration and deployment, a green test
+pull request, Sentry tagged `preview`, example page removed. Two items did not
+pass: branch protection (private repository on a free plan) and "Supabase
+changes only", which the owner left on; the agent then made the test pull
+request pass by touching `supabase/`. Everything below comes from that run's
+notes.
+
+- New `harness/bin/env-set`: sets keys in `.env.local` without reading it.
+  The `Read(.env*)` deny rule also blocks editing, so the agent could not
+  write the Sentry DSN.
+- New `scripts/check-signup.mjs`: the sign-up check of steps 2 and 8 had no
+  command.
+- Step 2 resets the local database after the sign-up check, and the RLS test
+  no longer assumes empty tables: the leftover user failed `gate.db` later.
+- Step 4 says what `config push` really applies (`storage` too).
+  `supabase/config.toml` now matches a new hosted project on TOTP MFA and OTP
+  length, so the push no longer weakens them; production keeps a one-minute
+  email frequency.
+- Step 8 treats a skipped `Supabase Preview` as the option being on, forbids
+  working around it, and gives the commands for the bypass secret, the
+  publishable keys and the Sentry environment query.
+- Steps 5 and 8 ask before acting; step 6 asks the person to re-check the
+  option. Deprecated flags replaced (`vercel list --prod`,
+  `gen types --local`).
+
 ## v0.3 - 2026-11-19
 
 `/setup` was run end to end by an agent on a throwaway repository with real

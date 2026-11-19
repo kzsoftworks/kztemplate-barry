@@ -16,7 +16,8 @@ values
 -- --- trigger behaviour (checked as the superuser) ---------------------------
 
 select is(
-  (select count(*)::int from public.profiles),
+  (select count(*)::int from public.profiles
+    where id in ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222')),
   2,
   'signing up creates a profile'
 );
@@ -30,7 +31,8 @@ select is(
 select is(
   (select count(*)::int from public.user_roles ur
      join public.roles r on r.id = ur.role_id
-    where r.name = 'member'),
+    where r.name = 'member'
+      and ur.user_id in ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222')),
   2,
   'new users get the member role'
 );
