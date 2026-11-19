@@ -10,33 +10,25 @@ and the repo carries the process the agents follow.
 - **An agent harness** for Claude Code: a fixed process, an issue tracker, quality
   gates, a reviewer and stack-specific skills
 
-## Quick start
+## Setup
 
-Requirements: Node.js 22.12+, git, and [beads](https://github.com/gastownhall/beads)
-(`npm i -g @beads/bd`). Docker is needed for the local Supabase stack.
+This template is opinionated. The stack, the services and the process are
+fixed, and there is one way to set it up:
+[`ASSISTANT_SETUP_GUIDE.md`](./ASSISTANT_SETUP_GUIDE.md), every section, in
+order. An app is set up when its checklist is complete: local Supabase, the
+harness, a Supabase project with Branching, Vercel with a Preview per pull
+request, and Sentry.
 
-```bash
-git clone https://github.com/kzsoftworks/kztemplate-barry.git my-app
-cd my-app
-npm install
-harness/bin/setup myapp        # checks tools, initialises the issue tracker
-npm run dev                    # http://localhost:3000
-```
+Requirements: Node.js 22.12+, git, Docker, the GitHub CLI and
+[beads](https://github.com/gastownhall/beads) (`npm i -g @beads/bd`), plus
+GitHub, Supabase, Vercel and Sentry accounts.
 
-The app boots without any service configured. To enable sign-in locally:
-
-```bash
-npm run db:start               # local Supabase; prints the URL and keys
-cp .env.example .env.local     # paste NEXT_PUBLIC_SUPABASE_URL and the publishable key
-npm run dev
-```
-
-For the full setup (Supabase project, Branching, Vercel, Sentry), open the repo
-in Claude Code and say:
+Create your repository from the template, open it in Claude Code and say:
 
 > Help me set up this template. Follow ASSISTANT_SETUP_GUIDE.md.
 
-or follow [`ASSISTANT_SETUP_GUIDE.md`](./ASSISTANT_SETUP_GUIDE.md) yourself.
+If you want a different auth provider, database or host, this is the wrong
+starting point.
 
 ## How work happens
 
@@ -109,8 +101,8 @@ points at the production project (`scripts/verify-preview-binding.mjs`). Two
 GitHub workflows run on each PR: `CI` (gates, build, database tests) and
 `E2E on Preview` (Playwright against the deployed URL).
 
-This needs Supabase Branching, which is a paid Supabase feature billed per
-active branch. Setup steps are in the guide.
+Supabase Branching is required. It is a paid Supabase feature, billed per
+active branch.
 
 ## Environment variables
 

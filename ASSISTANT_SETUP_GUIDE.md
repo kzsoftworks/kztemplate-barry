@@ -3,6 +3,9 @@
 Step-by-step setup for an app created from this template: local development,
 Supabase, Vercel with a Preview per pull request, Sentry, and the agent harness.
 
+The template is opinionated: every section is required and they are done in
+order. Setup is finished when the checklist at the end is complete.
+
 ## For the AI assistant
 
 If you are an agent guiding a person through this:
@@ -17,6 +20,8 @@ If you are an agent guiding a person through this:
   person agreeing first. Supabase Branching (section 5) is paid.
 - If a step fails, read the error and the Troubleshooting section before
   retrying. Do not skip a check to keep going.
+- Do not offer alternatives to the stack or leave a section out. If the person
+  wants a different service, say that this template does not cover it.
 
 ## 0. What you need
 
@@ -108,8 +113,9 @@ npm run db:types
 
 ## 5. Supabase Branching (a database per pull request)
 
-Branching is a paid Supabase feature, billed for each branch while it is
-active. Confirm with whoever pays before enabling it.
+Branching is required: it is what gives each pull request its own database. It
+is a paid Supabase feature, billed for each branch while it is active, so
+confirm with whoever pays before enabling it.
 
 1. **(person)** In the Supabase dashboard: **Project Settings → Integrations →
    GitHub**. Authorize and choose your repository.
@@ -123,11 +129,6 @@ active. Confirm with whoever pays before enabling it.
 
 **Check:** after section 6, opening a pull request shows a comment from
 Supabase with the status of its preview branch.
-
-If you do not want Branching, skip this section: Previews then need Supabase
-variables set by hand in Vercel for the Preview environment, pointing at a
-separate non-production project shared by all pull requests. Never point them
-at production; the build guard in section 6 will stop you if you do.
 
 ## 6. Vercel
 
@@ -183,8 +184,8 @@ ready. Wait for that redeploy.
    | `SENTRY_PROJECT`         | Vercel (Production, Preview)               |
    | `SENTRY_AUTH_TOKEN`      | Vercel (Production, Preview), as sensitive |
 
-   Without the token the build still works; stack traces are just not
-   de-minified.
+   All four are required. The token is what uploads source maps, so stack
+   traces in Sentry point at your code.
 
 **Check:** `npm run dev`, open http://localhost:3000/sentry-example-page and
 click the button. Two issues appear in Sentry within a minute, one from the
@@ -194,7 +195,7 @@ Previews arrive as `preview` and from production as `production`.
 Once verified, delete `src/app/sentry-example-page/` and
 `src/app/api/sentry-example-api/`, and remove them from `src/lib/routes.ts`.
 
-## 8. Agent tooling (optional)
+## 8. Agent tooling
 
 `.mcp.json` declares MCP servers for Claude Code. Each one asks for approval the
 first time, and the hosted ones ask you to sign in.
@@ -207,8 +208,9 @@ first time, and the hosted ones ask you to sign in.
 | `sentry`        | issues and traces                                 |                             |
 | `vercel`        | deployments and build logs                        |                             |
 
-To point the Supabase server at a hosted project, export this in your shell
-before starting Claude Code. Use a development project or a preview branch,
+Approve all five. The Supabase server points at the local stack by default. To
+point it at a hosted project, and to scope Sentry to your project, export these
+in your shell before starting Claude Code. For Supabase use a preview branch,
 keep `read_only=true`, and never use the production project:
 
 ```bash
@@ -236,6 +238,7 @@ In Claude Code:
 - [ ] `VERCEL_AUTOMATION_BYPASS_SECRET` set in GitHub
 - [ ] A test pull request shows all four checks green and the `preview-binding` line
 - [ ] Sentry receives the sample errors; example page deleted
+- [ ] MCP servers approved in Claude Code
 - [ ] `INTENT.md` filled in
 
 ## Troubleshooting
