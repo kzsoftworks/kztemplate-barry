@@ -17,6 +17,34 @@ The harness improves in phases, each with an entry condition:
    `harness/evals/`: propose, re-run the evals in a worktree, open a pull
    request only if it improves without regressions. Never merged automatically.
 
+## v0.3 - 2026-11-19
+
+`/setup` was run end to end by an agent on a throwaway repository with real
+Supabase, Vercel and Sentry accounts. The run reached a green test pull
+request (checks, preview binding, a user isolated from production, Sentry
+tagged `preview`) and the migration and RLS tests passed in CI. Docker was not
+available, so the local stack of step 2 is still unverified. Everything below
+comes from that run's notes.
+
+- Logins go in a separate terminal; `!` in Claude Code is not a TTY.
+- Global binaries are resolved through `npm prefix -g` before being reported
+  missing.
+- Step 0 checks that the commit author maps to a GitHub account (Vercel blocks
+  deployments otherwise) and whether the repository can have branch protection.
+- Sentry needs a re-authorization before a token can be created.
+- `supabase projects create` needs `--yes`; `link` is retried once.
+- `config push` applies every difference, which the skill now says; its check
+  is "no differences under `auth`", since pooler and storage are not managed.
+- Production gets email confirmation through `[remotes.production]`. Before,
+  Branching would have applied the local setting (off) to production.
+- New Vercel projects need `createDeployments` enabled, or `E2E on Preview`
+  never triggers.
+- Secrets are captured in a variable and then stored; piping `sentry` into
+  `vercel env add` lost the token to a race.
+- "Supabase changes only" must be off, or pull requests without database
+  changes get no branch and fail their Preview build.
+- `preview-deploy` and the guide's troubleshooting cover the same failures.
+
 ## v0.2 - 2026-11-19
 
 - **`/setup` skill.** Setup was a guide in prose with every cloud step done by

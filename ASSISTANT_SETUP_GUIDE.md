@@ -57,7 +57,10 @@ Create a new repository**), clone it, and start Claude Code in it.
 ## What you do
 
 1. **Log in** to each CLI when asked (`gh auth login`, `npx supabase login`,
-   `vercel login`, `npx sentry auth login`). Each opens a browser.
+   `vercel login`, `npx sentry auth login`). Run them in a separate terminal,
+   not with `!` inside Claude Code: each opens a browser and needs a real
+   terminal. Sentry needs one more command, which the agent gives you, to
+   allow creating the source map token.
 2. **Decide** once: app name, issue prefix, Supabase organisation and region,
    Vercel team, Sentry organisation, production domain.
 3. **Approve** what costs money or is public: creating the Supabase project,
@@ -65,16 +68,35 @@ Create a new repository**), clone it, and start Claude Code in it.
 4. **Authorize two integrations** in the Supabase dashboard, at
    **Project Settings → Integrations**. The agent gives you the link and waits.
    - **GitHub**: choose the repository; Supabase directory `supabase`;
-     production branch `main`; automatic branching on; deploy to production on.
-     This is what gives each pull request its own database.
+     production branch `main`; automatic branching on; **Supabase changes only
+     off**; deploy to production on. This is what gives each pull request its
+     own database. "Supabase changes only" is on by default: leave it on and
+     every pull request that does not touch `supabase/` fails its Preview
+     build. With it off, one branch is billed for every open pull request.
    - **Vercel**: connect the Vercel project and enable environment variable
      sync for **Production** and **Preview**. This is what points each Preview
-     at its own branch.
+     at its own branch. It adds about fifteen variables, including database
+     credentials and server-side keys; the app reads only the two public ones
+     and `SUPABASE_SECRET_KEY`.
 5. **Approve the MCP servers** the first time Claude Code asks (`next-devtools`,
    `shadcn`, `supabase`, `sentry`, `vercel`), and add the two `export` lines
    the agent gives you to your shell profile.
 
 Never paste a secret into the chat. The agent does not need one from you.
+
+Two things about your accounts decide whether setup can finish:
+
+- **Your git email must belong to your GitHub account.** Vercel blocks every
+  deployment whose commit author GitHub cannot match to an account. Check with
+  `git config user.email` against github.com/settings/emails.
+- **Branch protection needs a GitHub plan that includes it.** A private
+  repository on a free personal account cannot protect `main`; setup then
+  reports that item as not done.
+
+Production asks new users to confirm their email; local development and
+preview branches do not. Confirmation emails go through Supabase's built-in
+mail service, limited to a few per hour: configure a custom SMTP provider
+before real users sign up.
 
 ## After setup
 
@@ -102,6 +124,22 @@ and remove them from `src/lib/routes.ts`. Then, in Claude Code:
 - [ ] `INTENT.md` filled in
 
 ## Troubleshooting
+
+**Vercel deployment is "Blocked", "couldn't find a Git account for the commit
+author".** The commit was made with an email that is not on your GitHub
+account. Add and verify it at github.com/settings/emails, or commit with your
+GitHub noreply address.
+
+**`Supabase Preview` says the pull request was ignored.** "Supabase changes
+only" is on in the GitHub integration. Turn it off, then close the pull request
+and open a new one: Supabase decides when the pull request is opened.
+
+**`E2E on Preview` never runs.** The Vercel project does not report
+deployments to GitHub. Enable `deployment_status` events in Vercel → Project →
+Settings → Git.
+
+**Typecheck fails on a file under `.next/dev/types` after deleting a route.**
+Delete `.next/dev/types` and run it again.
 
 **`npm run db:start` fails.** Docker is not running, or ports 54321–54324 are
 taken. `npx supabase stop --no-backup` clears a half-started stack.

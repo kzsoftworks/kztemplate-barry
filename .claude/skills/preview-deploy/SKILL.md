@@ -43,6 +43,10 @@ Use `gh` (and the Vercel and Supabase MCP servers if they are connected).
    - Missing variables on the first deployment are expected: they are synced
      when the PR is opened, and Supabase redeploys once the branch is ready.
      Wait for that redeploy before investigating.
+   - If `Supabase Preview` says the pull request was ignored, no branch
+     exists and the variables will never arrive: "Supabase changes only" is
+     on in the Supabase GitHub integration. It has to be turned off and the
+     pull request closed and reopened as a new one.
 3. **Smoke**: a Vercel status of READY, or a deployment-protection login page,
    does not prove the app renders. The `E2E on Preview` check is the evidence.
    For a feature, also exercise the changed flow on the Preview URL.

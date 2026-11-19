@@ -236,8 +236,9 @@ enabled = true
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
 # If enabled, users need to confirm their email address before signing in.
-# Off for local dev and preview branches so sign-up works without an inbox. Turn it on for
-# production (Dashboard > Authentication > Sign In / Providers > Email); the app handles both.
+# Off for local dev and preview branches so sign-up works without an inbox. Production turns it
+# on through the [remotes.production] block that /setup appends to this file; the app handles
+# both. Do not change it in the dashboard: Branching re-applies this file on every merge.
 enable_confirmations = false
 # If enabled, users will need to reauthenticate or have logged in recently to change their password.
 secure_password_change = false
