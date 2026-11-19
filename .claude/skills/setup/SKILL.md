@@ -78,22 +78,27 @@ Then check the two things that otherwise stop setup much later:
 
 ```bash
 # 1. Vercel blocks every deployment whose commit author GitHub cannot match to
-#    an account. "null" here means the git email is not on the GitHub account.
-gh api repos/{owner}/{repo}/commits/HEAD -q .author.login
+#    an account. The email you will commit with must be on the GitHub account.
+git config user.email
+gh api user/emails -q '.[].email'          # needs the user:email scope
+gh api -X GET search/commits -f q="author-email:$(git config user.email)" \
+  -q '.items[0].author.login'              # fallback: a login proves the match
 
 # 2. Branch protection: 404 "Branch not protected" means it is available;
 #    403 "Upgrade to GitHub Pro" means this repository cannot have it.
 gh api repos/{owner}/{repo}/branches/main/protection
 ```
 
-If 1 prints `null`, stop and let the person choose: add and verify the email
-at github.com/settings/emails (fixes existing commits too), or set
+For 1: an address ending in `@users.noreply.github.com` is fine. Otherwise it
+must appear in the first list, or the search must return the person's login.
+If neither can show it, stop and let the person choose: add and verify the
+email at github.com/settings/emails (fixes existing commits too), or set
 `git config --local user.email` to their GitHub noreply address (fixes new
 commits only). If 2 is a 403, say so now: step 7 will report branch protection
 as not done unless the repository becomes public or the plan changes.
 
-**Check:** the eight commands succeed, the commit author has a login, and the
-person knows whether branch protection is available.
+**Check:** the eight commands succeed, the git email is known to GitHub, and
+the person knows whether branch protection is available.
 
 ## 1. Decisions
 
@@ -146,8 +151,12 @@ npm run test:db
 harness/bin/verify --db
 ```
 
-**Check:** `verify: OK` with all five gates passing, and `git diff --stat`
-shows at most `src/types/database.types.ts`. Commit that file if it changed.
+The local stack needs about 2 GB of free memory.
+
+**Check:** `verify: OK` with all five gates passing; a sign-up at
+http://localhost:3000/sign-up (with `npm run dev`) lands on `/profile` with
+the `member` role; and `git diff --stat` shows at most
+`src/types/database.types.ts`. Commit that file if it changed.
 
 ## 3. Sentry
 

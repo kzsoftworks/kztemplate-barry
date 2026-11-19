@@ -44,6 +44,10 @@ comes from that run's notes.
 - "Supabase changes only" must be off, or pull requests without database
   changes get no branch and fail their Preview build.
 - `preview-deploy` and the guide's troubleshooting cover the same failures.
+- With Docker available: the migration applies locally, the 12 RLS tests and
+  `db lint` pass, and `src/types/database.types.ts` is now generated instead
+  of hand-written. Local analytics is off in `supabase/config.toml`: with it
+  on, the stack plus the e2e gate ran out of memory on a 4 GB machine.
 
 ## v0.2 - 2026-11-19
 
